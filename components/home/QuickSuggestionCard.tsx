@@ -1,29 +1,43 @@
 import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 interface Props {
+  id?: number;
   title: string;
   time: string;
   difficulty: string;
-  ingredients: number;
+  ingredients?: number | string[];
+  calories?: number;
   onPress?: () => void;
   icon?: string;
 }
 
 const QuickSuggestionCard: React.FC<Props> = ({
+  id,
   title,
   time,
   difficulty,
   ingredients,
+  calories,
   onPress,
-  icon = 'food',
+  icon = '🍽️',
 }) => {
+  const router = useRouter();
+
+  const handlePress = () => {
+    if (onPress) return onPress();
+    if (id != null) {
+      router.push(`/recipe/recipe?id=${encodeURIComponent(String(id))}`);
+    }
+  };
+
   return (
-    <TouchableOpacity style={styles.card} onPress={onPress} activeOpacity={0.8}>
+    <TouchableOpacity style={styles.card} onPress={handlePress} activeOpacity={0.8}>
       <View style={styles.left}>
-        <View style={styles.iconWrap}>
-          <Feather name={icon as any} size={20} color="#D97706" />
+        <View style={styles.iconContainer}>
+          <Text style={styles.icon}>{icon}</Text>
         </View>
       </View>
 
@@ -31,8 +45,9 @@ const QuickSuggestionCard: React.FC<Props> = ({
         <Text style={styles.title}>{title}</Text>
         <View style={styles.metaRow}>
           <Text style={styles.metaText}>⏱ {time}</Text>
+          {typeof calories === 'number' && <Text style={styles.metaText}> • {calories} kcal</Text>}
           <Text style={styles.metaText}> • {difficulty}</Text>
-          <Text style={styles.metaText}> • {ingredients} ingredientes</Text>
+          <Text style={styles.metaText}> • {Array.isArray(ingredients) ? ingredients.length : ingredients ?? 0} ingredientes</Text>
         </View>
       </View>
 
@@ -60,13 +75,16 @@ const styles = StyleSheet.create({
   left: {
     paddingRight: 12,
   },
-  iconWrap: {
+  iconContainer: {
     width: 44,
     height: 44,
     borderRadius: 22,
     backgroundColor: '#FFF',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  icon: {
+    fontSize: 22,
   },
   content: {
     flex: 1,

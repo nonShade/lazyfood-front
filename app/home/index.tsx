@@ -1,8 +1,8 @@
-import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import BottomNavigation from '../../components/common/BottomNavigation';
 import HomeHeader from '../../components/home/HomeHeader';
 import QuickSuggestionCard from '../../components/home/QuickSuggestionCard';
+import { usePlanner } from '../../hooks/usePlanner';
 
 const Home = () => {
   const navigationItems = [
@@ -11,6 +11,7 @@ const Home = () => {
     { id: 'planner', icon: 'calendar', label: 'Calendario', isActive: false, onPress: () => {} },
     { id: 'profile', icon: 'user', label: 'Perfil', isActive: false, onPress: () => {} },
   ];
+  const { recipes } = usePlanner('user123');
 
   return (
     <View style={styles.container}>
@@ -18,9 +19,45 @@ const Home = () => {
         <HomeHeader />
 
         <View style={styles.section}>
-          <QuickSuggestionCard title="Pasta con tomate" time="15 min" difficulty="Fácil" ingredients={3} icon="food" />
-          <QuickSuggestionCard title="Ensalada mediterránea" time="10 min" difficulty="Fácil" ingredients={5} icon="food" />
-          <QuickSuggestionCard title="Pollo al limón" time="25 min" difficulty="Intermedio" ingredients={4} icon="food" />
+          {}
+          {(() => {
+            const suggestionCount = 3;
+            const suggestions = recipes?.slice(0, suggestionCount) ?? [];
+            const suggestionIds = new Set(suggestions.map(s => s.id));
+            const rest = recipes?.filter(r => !suggestionIds.has(r.id)) ?? [];
+
+            return (
+              <>
+                {suggestions.map((r) => (
+                  <QuickSuggestionCard
+                    key={`qs-${r.id}`}
+                    id={r.id}
+                    title={r.name}
+                    time={`${r.time} min`}
+                    difficulty={r.difficulty}
+                    ingredients={r.ingredients}
+                    calories={r.calories}
+                    icon={r.icon}
+                  />
+                ))}
+
+                <View style={{ height: 8 }} />
+
+                {rest.map((r) => (
+                  <QuickSuggestionCard
+                    key={`rc-${r.id}`}
+                    id={r.id}
+                    title={r.name}
+                    time={`${r.time} min`}
+                    difficulty={r.difficulty}
+                    ingredients={r.ingredients}
+                    calories={r.calories}
+                    icon={r.icon}
+                  />
+                ))}
+              </>
+            );
+          })()}
         </View>
 
         <View style={{ height: 120 }} />
