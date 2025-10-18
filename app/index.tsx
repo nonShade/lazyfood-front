@@ -1,6 +1,6 @@
-import Home from './home';
+import Login from './(auth)/Login';
 
 // Por ahora exportamos la pantalla Home como página principal.
 export default function Page() {
-  return <Home />;
+  return <Login />;
 }
