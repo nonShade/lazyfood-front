@@ -222,6 +222,7 @@ export const usePlanner = (userId: string) => {
     setCurrentMonth,
     getStatsForMonth,
     getDayPlan,
+    getAISuggestions,
     getRecipeById: (id: number) => mockRecipes.find(r => r.id === id) ?? null,
   };
 };

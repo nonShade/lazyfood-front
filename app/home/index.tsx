@@ -1,5 +1,5 @@
-import { ScrollView, StyleSheet, View } from 'react-native';
 import { router } from 'expo-router';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import BottomNavigation from '../../components/common/BottomNavigation';
 import HomeHeader from '../../components/home/HomeHeader';
 import QuickSuggestionCard from '../../components/home/QuickSuggestionCard';
@@ -45,9 +45,6 @@ const Home = () => {
                     icon={r.icon}
                   />
                 ))}
-
-                <View style={{ height: 8 }} />
-
                 {rest.map((r) => (
                   <QuickSuggestionCard
                     key={`rc-${r.id}`}

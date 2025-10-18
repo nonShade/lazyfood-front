@@ -64,6 +64,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     backgroundColor: '#FEF3E0',
     padding: 14,
+    minHeight: 76,
     borderRadius: 14,
     marginBottom: 12,
     marginHorizontal: 10,
@@ -88,6 +89,9 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
+    justifyContent: 'center',
+    // ensure consistent vertical spacing
+    paddingVertical: 6,
   },
   title: {
     fontSize: 16,
@@ -98,11 +102,11 @@ const styles = StyleSheet.create({
   metaRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 8,
   },
   metaText: {
     fontSize: 12,
     color: '#6B7280',
+    marginRight: 8,
   },
   chev: {
     paddingLeft: 8,
