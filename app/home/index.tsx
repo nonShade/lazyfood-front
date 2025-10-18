@@ -1,6 +1,7 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
 import BottomNavigation from '../../components/common/BottomNavigation';
+import HomeHeader from '../../components/home/HomeHeader';
 
 const Home = () => {
   const navigationItems = [
@@ -13,7 +14,7 @@ const Home = () => {
   return (
     <View style={styles.container}>
       <ScrollView style={styles.scroll} showsVerticalScrollIndicator={false}>
-        {}
+        <HomeHeader />
       </ScrollView>
 
       <BottomNavigation items={navigationItems} />
