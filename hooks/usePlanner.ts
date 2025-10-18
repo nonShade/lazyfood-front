@@ -26,6 +26,78 @@ const mockRecipes: Recipe[] = [
     difficulty: 'Fácil',
     icon: '🥗',
   },
+  {
+    id: 4,
+    name: 'Avocado Toast',
+    time: 8,
+    calories: 180,
+    difficulty: 'Fácil',
+    icon: '🥑',
+  },
+  {
+    id: 5,
+    name: 'Huevos Revueltos',
+    time: 12,
+    calories: 200,
+    difficulty: 'Fácil',
+    icon: '🍳',
+  },
+  {
+    id: 6,
+    name: 'Smoothie Tropical',
+    time: 5,
+    calories: 120,
+    difficulty: 'Fácil',
+    icon: '🥤',
+  },
+  {
+    id: 7,
+    name: 'Pasta Carbonara',
+    time: 25,
+    calories: 420,
+    difficulty: 'Medio',
+    icon: '🍝',
+  },
+  {
+    id: 8,
+    name: 'Pollo Teriyaki',
+    time: 30,
+    calories: 380,
+    difficulty: 'Medio',
+    icon: '🍗',
+  },
+  {
+    id: 9,
+    name: 'Tacos de Pescado',
+    time: 20,
+    calories: 280,
+    difficulty: 'Fácil',
+    icon: '🌮',
+  },
+  {
+    id: 10,
+    name: 'Salmón Grillado',
+    time: 18,
+    calories: 350,
+    difficulty: 'Medio',
+    icon: '🐟',
+  },
+  {
+    id: 11,
+    name: 'Ratatouille',
+    time: 45,
+    calories: 160,
+    difficulty: 'Medio',
+    icon: '🍆',
+  },
+  {
+    id: 12,
+    name: 'Curry de Verduras',
+    time: 35,
+    calories: 240,
+    difficulty: 'Medio',
+    icon: '🍛',
+  },
 ];
 
 const mockWeekPlan: WeekPlan = {
@@ -100,6 +172,31 @@ export const usePlanner = (userId: string) => {
     return weekPlan.days.find(day => day.date === dateString) || null;
   }, [weekPlan]);
 
+  const getAISuggestions = useCallback((mealType: 'breakfast' | 'lunch' | 'dinner', exclude?: number[]): Recipe[] => {
+    const breakfastRecipes = [0, 3, 4, 5];
+    const lunchRecipes = [1, 6, 7, 8, 9];
+    const dinnerRecipes = [2, 7, 8, 9, 10, 11];
+    
+    let suitableRecipeIds: number[] = [];
+    switch (mealType) {
+      case 'breakfast':
+        suitableRecipeIds = breakfastRecipes;
+        break;
+      case 'lunch':
+        suitableRecipeIds = lunchRecipes;
+        break;
+      case 'dinner':
+        suitableRecipeIds = dinnerRecipes;
+        break;
+    }
+    
+    const availableRecipes = suitableRecipeIds
+      .filter(id => !exclude?.includes(mockRecipes[id].id))
+      .map(id => mockRecipes[id]);
+    
+    return availableRecipes.slice(0, 3);
+  }, []);
+
   return {
     weekPlan,
     selectedDate,
@@ -110,5 +207,7 @@ export const usePlanner = (userId: string) => {
     setCurrentMonth,
     getStatsForMonth,
     getDayPlan,
+    getAISuggestions,
+    mockRecipes,
   };
 };
