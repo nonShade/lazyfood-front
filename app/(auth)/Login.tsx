@@ -1,19 +1,21 @@
+import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-    KeyboardAvoidingView,
-    Platform,
-    ScrollView,
-    StyleSheet,
-    Text,
-    TextInput,
-    TouchableOpacity,
-    View,
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  StyleSheet,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
 } from 'react-native';
 import { Colors } from '../../constants/theme';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const router = useRouter();
 
   return (
     <KeyboardAvoidingView
@@ -50,7 +52,7 @@ export default function Login() {
             placeholderTextColor="#9CA3AF"
           />
 
-          <TouchableOpacity style={styles.primaryButton} activeOpacity={0.85}>
+          <TouchableOpacity style={styles.primaryButton} activeOpacity={0.85} onPress={() => router.push('./home')}>
             <Text style={styles.primaryButtonText}>Comenzar</Text>
           </TouchableOpacity>
 
