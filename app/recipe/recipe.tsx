@@ -1,10 +1,16 @@
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { usePlanner } from '../../hooks/usePlanner';
+import { Recipe } from '../../types/planner';
 
 const RecipeDetail = () => {
   const router = useRouter();
   const params = useLocalSearchParams<{ id?: string }>();
+  const { getRecipeById } = usePlanner('user123');
+
+  const id = params.id ? Number(params.id) : null;
+  const recipe = id ? (getRecipeById(id) as Recipe | null) : null;
 
   return (
     <View style={styles.container}>
@@ -13,7 +19,11 @@ const RecipeDetail = () => {
       </TouchableOpacity>
 
       <View style={styles.center}>
-        <Text style={styles.text}>Detalle de receta ID: {params.id}</Text>
+        {recipe ? (
+          <Text style={styles.text}>{recipe.name}</Text>
+        ) : (
+          <Text style={styles.text}>Receta no encontrada</Text>
+        )}
       </View>
     </View>
   );
