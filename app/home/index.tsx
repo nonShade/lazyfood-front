@@ -22,6 +22,8 @@ const Home = () => {
           <QuickSuggestionCard title="Ensalada mediterránea" time="10 min" difficulty="Fácil" ingredients={5} icon="food" />
           <QuickSuggestionCard title="Pollo al limón" time="25 min" difficulty="Intermedio" ingredients={4} icon="food" />
         </View>
+
+        <View style={{ height: 120 }} />
       </ScrollView>
 
       <BottomNavigation items={navigationItems} />
