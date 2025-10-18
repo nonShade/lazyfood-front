@@ -1,9 +1,10 @@
 import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 const RecipeDetail = () => {
   const router = useRouter();
+  const params = useLocalSearchParams<{ id?: string }>();
 
   return (
     <View style={styles.container}>
@@ -12,7 +13,7 @@ const RecipeDetail = () => {
       </TouchableOpacity>
 
       <View style={styles.center}>
-        <Text style={styles.text}>Detalle de receta</Text>
+        <Text style={styles.text}>Detalle de receta ID: {params.id}</Text>
       </View>
     </View>
   );
