@@ -1,5 +1,5 @@
-import { useState, useCallback } from 'react';
-import { WeekPlan, PlannerStats, DayPlan, Recipe } from '../types/planner';
+import { useCallback, useState } from 'react';
+import { DayPlan, PlannerStats, Recipe, WeekPlan } from '../types/planner';
 
 const mockRecipes: Recipe[] = [
   {
@@ -9,6 +9,7 @@ const mockRecipes: Recipe[] = [
     calories: 150,
     difficulty: 'Fácil',
     icon: '🥖',
+    ingredients: ['4 rebanadas de pan', '2 Tomates maduros', '2 dientes de ajo', 'Hojas de albahaca', 'Aceite de oliva', 'Sal y pimienta'],
   },
   {
     id: 2,
@@ -17,6 +18,7 @@ const mockRecipes: Recipe[] = [
     calories: 180,
     difficulty: 'Fácil',
     icon: '🥘',
+    ingredients: ['2 Cebollas', '2 Pimientos', '3 Tomates', '2 dientes de ajo', 'Aceite de oliva', 'Sal', 'Pimienta'],
   },
   {
     id: 3,
@@ -25,6 +27,7 @@ const mockRecipes: Recipe[] = [
     calories: 220,
     difficulty: 'Fácil',
     icon: '🥗',
+    ingredients: ['Lechuga romana', '50g Queso parmesano', 'Crutones', 'Anchoas (opcional)', 'Aderezo César'],
   },
   {
     id: 4,
@@ -199,6 +202,9 @@ export const usePlanner = (userId: string) => {
 
   return {
     weekPlan,
+    // Expose the raw recipes from the mock week plan for UI components that
+    // want to render recipe lists without a backend.
+    recipes: mockRecipes,
     selectedDate,
     currentMonth,
     isLoading,
@@ -207,7 +213,6 @@ export const usePlanner = (userId: string) => {
     setCurrentMonth,
     getStatsForMonth,
     getDayPlan,
-    getAISuggestions,
-    mockRecipes,
+    getRecipeById: (id: number) => mockRecipes.find(r => r.id === id) ?? null,
   };
 };
