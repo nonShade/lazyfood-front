@@ -1,14 +1,18 @@
-import React from 'react';
 import { ScrollView, StyleSheet, View } from 'react-native';
+import { router } from 'expo-router';
 import BottomNavigation from '../../components/common/BottomNavigation';
 import HomeHeader from '../../components/home/HomeHeader';
 import QuickSuggestionCard from '../../components/home/QuickSuggestionCard';
 
 const Home = () => {
+  const handleScannerPress = () => {
+    // Scanner functionality 
+  };
+
   const navigationItems = [
     { id: 'home', icon: 'home', label: 'Inicio', isActive: true, onPress: () => {} },
     { id: 'recipes', icon: 'book-open', label: 'Recetas', isActive: false, onPress: () => {} },
-    { id: 'planner', icon: 'calendar', label: 'Calendario', isActive: false, onPress: () => {} },
+    { id: 'planner', icon: 'calendar', label: 'Calendario', isActive: false, onPress: () => router.push('/planner') },
     { id: 'profile', icon: 'user', label: 'Perfil', isActive: false, onPress: () => {} },
   ];
 
@@ -26,7 +30,7 @@ const Home = () => {
         <View style={{ height: 120 }} />
       </ScrollView>
 
-      <BottomNavigation items={navigationItems} />
+      <BottomNavigation items={navigationItems} onScannerPress={handleScannerPress} />
     </View>
   );
 };

@@ -12,37 +12,49 @@ interface NavigationItem {
 
 interface BottomNavigationProps {
   items: NavigationItem[];
+  onScannerPress?: () => void;
 }
 
-const BottomNavigation: React.FC<BottomNavigationProps> = ({ items }) => {
+const BottomNavigation: React.FC<BottomNavigationProps> = ({ items, onScannerPress }) => {
   return (
-    <View style={styles.bottomNav}>
-      {items.map((item) => (
-        <TouchableOpacity
-          key={item.id}
-          style={[styles.navItem, item.isActive && styles.navItemActive]}
-          onPress={item.onPress}
-        >
-          <Feather
-            name={item.icon as any}
-            size={24}
-            color={item.isActive ? '#D97706' : '#9CA3AF'}
-          />
-          <Text
-            style={[
-              styles.navText,
-              item.isActive && styles.navTextActive,
-            ]}
+    <View style={styles.container}>
+      <View style={styles.bottomNav}>
+        {items.map((item) => (
+          <TouchableOpacity
+            key={item.id}
+            style={[styles.navItem, item.isActive && styles.navItemActive]}
+            onPress={item.onPress}
           >
-            {item.label}
-          </Text>
+            <Feather
+              name={item.icon as any}
+              size={24}
+              color={item.isActive ? '#D97706' : '#9CA3AF'}
+            />
+            <Text
+              style={[
+                styles.navText,
+                item.isActive && styles.navTextActive,
+              ]}
+            >
+              {item.label}
+            </Text>
+          </TouchableOpacity>
+        ))}
+      </View>
+
+      {onScannerPress && (
+        <TouchableOpacity style={styles.fab} onPress={onScannerPress}>
+          <Feather name="camera" size={28} color="#FFF" />
         </TouchableOpacity>
-      ))}
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
+  container: {
+    position: 'relative',
+  },
   bottomNav: {
     flexDirection: 'row',
     backgroundColor: '#FFF',
@@ -64,6 +76,22 @@ const styles = StyleSheet.create({
   navTextActive: {
     color: '#D97706',
     fontWeight: '600',
+  },
+  fab: {
+    position: 'absolute',
+    right: 20,
+    bottom: 85,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
+    backgroundColor: '#D97706',
+    justifyContent: 'center',
+    alignItems: 'center',
+    elevation: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
   },
 });
 
