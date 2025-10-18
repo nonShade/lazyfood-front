@@ -1,5 +1,5 @@
-import PlannerHome from './planner';
+import Login from './(auth)/Login';
 
 export default function Page() {
-  return <PlannerHome />;
+  return <Login />;
 }
