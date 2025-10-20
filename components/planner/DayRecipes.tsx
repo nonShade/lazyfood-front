@@ -3,6 +3,7 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { DayPlan, Recipe } from '../../types/planner';
 import { usePlanner } from '../../hooks/usePlanner';
+import { getNext7Days, isDateInNext7Days } from '../../utils/dateUtils';
 
 interface DayRecipesProps {
   selectedDate: Date;
@@ -32,6 +33,11 @@ const DayRecipes: React.FC<DayRecipesProps> = ({
     return selected > today;
   };
 
+  const isInNext7Days = () => {
+    const next7Days = getNext7Days();
+    return isDateInNext7Days(selectedDate, next7Days);
+  };
+
   const formatDate = () => {
     const dayName = weekDays[selectedDate.getDay()];
     const day = selectedDate.getDate();
@@ -58,7 +64,8 @@ const DayRecipes: React.FC<DayRecipesProps> = ({
       return dayPlan[mealType];
     }
 
-    if (!isFutureDate()) {
+    // Si está en los próximos 7 días o es una fecha pasada, mostrar sugerencias
+    if (isInNext7Days() || !isFutureDate()) {
       const suggestions = getAISuggestions(mealType);
       return suggestions[0] || null;
     }
@@ -141,7 +148,8 @@ const DayRecipes: React.FC<DayRecipesProps> = ({
   ];
 
   const renderMealSlot = (mealType: 'breakfast' | 'lunch' | 'dinner') => {
-    if (isFutureDate()) {
+    // Solo mostrar el slot de "futuro" si es una fecha futura Y no está en los próximos 7 días
+    if (isFutureDate() && !isInNext7Days()) {
       return renderFutureMealSlot(mealType);
     }
 
@@ -293,24 +301,6 @@ const styles = StyleSheet.create({
     fontSize: 12,
     color: '#9CA3AF',
     textAlign: 'center',
-  },
-  noRecipesContainer: {
-    alignItems: 'center',
-    paddingVertical: 40,
-    gap: 12,
-  },
-  noRecipesTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    textAlign: 'center',
-  },
-  noRecipesSubtitle: {
-    fontSize: 14,
-    color: '#6B7280',
-    textAlign: 'center',
-    lineHeight: 20,
-    paddingHorizontal: 20,
   },
 });
 
