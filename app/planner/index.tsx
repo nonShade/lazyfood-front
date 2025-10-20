@@ -1,4 +1,3 @@
-import React from 'react';
 import {
   View,
   Text,
@@ -8,6 +7,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { router } from 'expo-router';
 import { usePlanner } from '../../hooks/usePlanner';
 import Calendar from '../../components/planner/Calendar';
 import DayRecipes from '../../components/planner/DayRecipes';
@@ -35,7 +35,7 @@ const PlannerHome = () => {
     setCurrentMonth(newMonth);
   };
 
-  const handleFabPress = () => {
+  const handleScannerPress = () => {
     // Scanner functionality 
   };
 
@@ -48,7 +48,7 @@ const PlannerHome = () => {
       icon: 'home',
       label: 'Inicio',
       isActive: false,
-      onPress: () => console.log('Navigate to home'),
+      onPress: () => router.push('/home'),
     },
     {
       id: 'recipes',
@@ -62,7 +62,7 @@ const PlannerHome = () => {
       icon: 'calendar',
       label: 'Calendario',
       isActive: true,
-      onPress: () => console.log('Navigate to planner'),
+      onPress: () => {},
     },
     {
       id: 'profile',
@@ -118,11 +118,9 @@ const PlannerHome = () => {
         <View style={{ height: 100 }} />
       </ScrollView>
 
-      <TouchableOpacity style={styles.fab} onPress={handleFabPress}>
-        <Feather name="camera" size={28} color="#FFF" />
-      </TouchableOpacity>
 
-      <BottomNavigation items={navigationItems} />
+
+      <BottomNavigation items={navigationItems} onScannerPress={handleScannerPress} />
     </View>
   );
 };
@@ -180,22 +178,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     lineHeight: 20,
   },
-  fab: {
-    position: 'absolute',
-    right: 20,
-    bottom: 90,
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: '#D97706',
-    justifyContent: 'center',
-    alignItems: 'center',
-    elevation: 8,
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
-  },
+
 });
 
 export default PlannerHome;

@@ -1,5 +1,6 @@
-import PlannerHome from './planner';
+import Login from './(auth)/Login';
 
+// Por ahora exportamos la pantalla Home como página principal.
 export default function Page() {
-  return <PlannerHome />;
+  return <Login />;
 }

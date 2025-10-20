@@ -10,6 +10,7 @@ const mockRecipes: Recipe[] = [
     calories: 150,
     difficulty: 'Fácil',
     icon: '🥖',
+    ingredients: ['4 rebanadas de pan', '2 Tomates maduros', '2 dientes de ajo', 'Hojas de albahaca', 'Aceite de oliva', 'Sal y pimienta'],
   },
   {
     id: 2,
@@ -18,6 +19,7 @@ const mockRecipes: Recipe[] = [
     calories: 180,
     difficulty: 'Fácil',
     icon: '🥘',
+    ingredients: ['2 Cebollas', '2 Pimientos', '3 Tomates', '2 dientes de ajo', 'Aceite de oliva', 'Sal', 'Pimienta'],
   },
   {
     id: 3,
@@ -26,6 +28,7 @@ const mockRecipes: Recipe[] = [
     calories: 220,
     difficulty: 'Fácil',
     icon: '🥗',
+    ingredients: ['Lechuga romana', '50g Queso parmesano', 'Crutones', 'Anchoas (opcional)', 'Aderezo César'],
   },
   {
     id: 4,
@@ -34,6 +37,7 @@ const mockRecipes: Recipe[] = [
     calories: 180,
     difficulty: 'Fácil',
     icon: '🥑',
+    ingredients: ['2 rebanadas de pan integral', '1 aguacate maduro', '1/2 limón', 'Sal', 'Pimienta', 'Hojuelas de chile (opcional)'],
   },
   {
     id: 5,
@@ -42,6 +46,7 @@ const mockRecipes: Recipe[] = [
     calories: 200,
     difficulty: 'Fácil',
     icon: '🍳',
+    ingredients: ['3 huevos', '1 cucharada de mantequilla', 'Sal', 'Pimienta', 'Cebollín picado (opcional)'],
   },
   {
     id: 6,
@@ -50,6 +55,7 @@ const mockRecipes: Recipe[] = [
     calories: 120,
     difficulty: 'Fácil',
     icon: '🥤',
+    ingredients: ['1 plátano', '1/2 mango', '100 ml de leche de almendras', '1/2 taza de piña', 'Hielo al gusto'],
   },
   {
     id: 7,
@@ -58,6 +64,7 @@ const mockRecipes: Recipe[] = [
     calories: 420,
     difficulty: 'Medio',
     icon: '🍝',
+    ingredients: ['200g de pasta (espagueti)', '100g de panceta o bacon', '2 huevos', '50g de queso parmesano', 'Pimienta negra', 'Sal'],
   },
   {
     id: 8,
@@ -66,6 +73,7 @@ const mockRecipes: Recipe[] = [
     calories: 380,
     difficulty: 'Medio',
     icon: '🍗',
+    ingredients: ['400g de pechuga de pollo', '3 cucharadas de salsa de soja', '2 cucharadas de mirin', '1 cucharada de azúcar', 'Ajo y jengibre picado', 'Aceite para cocinar'],
   },
   {
     id: 9,
@@ -74,6 +82,7 @@ const mockRecipes: Recipe[] = [
     calories: 280,
     difficulty: 'Fácil',
     icon: '🌮',
+    ingredients: ['300g filetes de pescado blanco', 'Tortillas de maíz', 'Col rallada', 'Salsa de yogur o mayonesa', 'Limón', 'Especias (comino, paprika)'],
   },
   {
     id: 10,
@@ -82,6 +91,7 @@ const mockRecipes: Recipe[] = [
     calories: 350,
     difficulty: 'Medio',
     icon: '🐟',
+    ingredients: ['2 filetes de salmón', 'Aceite de oliva', 'Sal', 'Pimienta', 'Rodajas de limón', 'Eneldo fresco (opcional)'],
   },
   {
     id: 11,
@@ -90,6 +100,7 @@ const mockRecipes: Recipe[] = [
     calories: 160,
     difficulty: 'Medio',
     icon: '🍆',
+    ingredients: ['1 berenjena', '1 calabacín', '1 pimiento rojo', '2 tomates', '1 cebolla', '2 dientes de ajo', 'Aceite de oliva', 'Hierbas provenzales', 'Sal y pimienta'],
   },
   {
     id: 12,
@@ -98,6 +109,7 @@ const mockRecipes: Recipe[] = [
     calories: 240,
     difficulty: 'Medio',
     icon: '🍛',
+    ingredients: ['1 patata', '1 zanahoria', '1 calabacín', '1 cebolla', '200ml leche de coco', '2 cucharadas de pasta de curry', 'Aceite', 'Sal'],
   },
 ];
 
@@ -200,6 +212,9 @@ export const usePlanner = (_userId: string) => {
 
   return {
     weekPlan,
+    // Expose the raw recipes from the mock week plan for UI components that
+    // want to render recipe lists without a backend.
+    recipes: mockRecipes,
     selectedDate,
     currentMonth,
     isLoading,
@@ -209,6 +224,6 @@ export const usePlanner = (_userId: string) => {
     getStatsForMonth,
     getDayPlan,
     getAISuggestions,
-    mockRecipes,
+    getRecipeById: (id: number) => mockRecipes.find(r => r.id === id) ?? null,
   };
 };
