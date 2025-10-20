@@ -1,5 +1,6 @@
-import { useCallback, useState } from 'react';
-import { DayPlan, PlannerStats, Recipe, WeekPlan } from '../types/planner';
+import { useState, useCallback, useMemo } from 'react';
+import { WeekPlan, PlannerStats, DayPlan, Recipe } from '../types/planner';
+import { getNext7Days, formatDate } from '../utils/dateUtils';
 
 const mockRecipes: Recipe[] = [
   {
@@ -112,33 +113,33 @@ const mockRecipes: Recipe[] = [
   },
 ];
 
-const mockWeekPlan: WeekPlan = {
-  userId: 'user123',
-  startDate: '2025-10-13',
-  endDate: '2025-10-19',
-  days: [
-    {
-      date: '2025-10-17',
-      breakfast: mockRecipes[0],
-      lunch: mockRecipes[1],
-      dinner: mockRecipes[2],
-    },
-    {
-      date: '2025-10-18',
-      lunch: mockRecipes[0],
-    },
-  ],
+const generateSuggestedWeekPlan = (): WeekPlan => {
+  const suggestedDays = getNext7Days();
+  const planDays: DayPlan[] = suggestedDays.map((date: Date, index: number) => {
+    const mealIndex = index % mockRecipes.length;
+    return {
+      date: formatDate(date),
+      breakfast: mockRecipes[mealIndex % 4],
+      lunch: mockRecipes[(mealIndex + 1) % mockRecipes.length],
+      dinner: mockRecipes[(mealIndex + 2) % mockRecipes.length],
+    };
+  });
+
+  return {
+    userId: 'user123',
+    startDate: formatDate(suggestedDays[0]),
+    endDate: formatDate(suggestedDays[suggestedDays.length - 1]),
+    days: planDays,
+  };
 };
 
-export const usePlanner = (userId: string) => {
-  const [weekPlan, setWeekPlan] = useState<WeekPlan | null>(mockWeekPlan);
+export const usePlanner = (_userId: string) => {
+  const suggestedWeekPlan = useMemo(() => generateSuggestedWeekPlan(), []);
+  const [weekPlan] = useState<WeekPlan | null>(suggestedWeekPlan);
   const [selectedDate, setSelectedDate] = useState(new Date());
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-
-
-
+  const [isLoading] = useState(false);
+  const [error] = useState<string | null>(null);
   const getStatsForMonth = useCallback((): PlannerStats => {
     if (!weekPlan) {
       return {

@@ -1,7 +1,8 @@
-import React from 'react';
+import React, { useMemo } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { DayPlan } from '../../types/planner';
+import { getNext7Days, isDateInNext7Days } from '../../utils/dateUtils';
 
 interface CalendarProps {
   currentMonth: Date;
@@ -24,6 +25,13 @@ const Calendar: React.FC<CalendarProps> = ({
   ];
 
   const weekDays = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
+
+  const suggestedDays = useMemo(() => getNext7Days(), []);
+
+  const isSuggestedDay = (day: number): boolean => {
+    const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    return isDateInNext7Days(date, suggestedDays);
+  };
 
   const getDaysInMonth = (date: Date) => {
     const year = date.getFullYear();
@@ -61,6 +69,7 @@ const Calendar: React.FC<CalendarProps> = ({
     for (let day = 1; day <= daysInMonth; day++) {
       const hasRecipes = hasRecipesForDate(day);
       const isSelected = isDateSelected(day);
+      const isSuggested = isSuggestedDay(day);
 
       days.push(
         <TouchableOpacity
@@ -76,6 +85,7 @@ const Calendar: React.FC<CalendarProps> = ({
             style={[
               styles.dayContent,
               hasRecipes && styles.dayWithRecipes,
+              isSuggested && !hasRecipes && styles.suggestedDay,
               isSelected && styles.selectedDay,
             ]}
           >
@@ -129,6 +139,10 @@ const Calendar: React.FC<CalendarProps> = ({
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, styles.recipeDot]} />
             <Text style={styles.legendText}>Días con recetas</Text>
+          </View>
+          <View style={styles.legendItem}>
+            <View style={[styles.legendDot, styles.suggestedDot]} />
+            <Text style={styles.legendText}>Días sugeridos</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, styles.selectedDot]} />
@@ -195,6 +209,12 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#F59E0B',
   },
+  suggestedDay: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#D97706',
+    borderStyle: 'dashed',
+  },
   selectedDay: {
     backgroundColor: '#F59E0B',
   },
@@ -229,6 +249,11 @@ const styles = StyleSheet.create({
     backgroundColor: '#FDE68A',
     borderWidth: 2,
     borderColor: '#F59E0B',
+  },
+  suggestedDot: {
+    backgroundColor: '#FEF3C7',
+    borderWidth: 1,
+    borderColor: '#D97706',
   },
   selectedDot: {
     backgroundColor: '#F59E0B',
