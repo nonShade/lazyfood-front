@@ -28,7 +28,7 @@ export const useNavigation = () => {
       icon: 'user',
       label: 'Perfil',
       isActive: activeRoute === 'profile',
-      onPress: () => {}, // TODO: Crear ruta /profile
+      onPress: () => router.push('/profile'),
     },
   ];
 
