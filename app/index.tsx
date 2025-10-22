@@ -1,6 +1,5 @@
-import Login from './(auth)/Login';
-
+import CustomSplashScreen from '../components/common/CustomSplashScreen';
 
 export default function Page() {
-  return <Login />;
+  return <CustomSplashScreen />;
 }

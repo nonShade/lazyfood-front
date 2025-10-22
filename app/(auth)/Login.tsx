@@ -52,7 +52,7 @@ export default function Login() {
             placeholderTextColor="#9CA3AF"
           />
 
-          <TouchableOpacity style={styles.primaryButton} activeOpacity={0.85} onPress={() => router.push('./home')}>
+          <TouchableOpacity style={styles.primaryButton} activeOpacity={0.85} onPress={() => router.push('../home')}>
             <Text style={styles.primaryButtonText}>Comenzar</Text>
           </TouchableOpacity>
 
