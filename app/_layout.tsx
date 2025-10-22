@@ -5,18 +5,18 @@ import { useNavigation } from '../hooks/useNavigation';
 
 export default function RootLayout() {
   const pathname = usePathname();
-  const { navigateToScanner, getNavigationItems } = useNavigation();
+  const { getNavigationItems, navigateToScanner } = useNavigation();
 
-  const getActiveRoute = (): 'home' | 'recipes' | 'planner' | 'profile' => {
+  const getActiveRoute = (): 'home' | 'inventory' | 'planner' | 'profile' => {
     if (pathname.includes('/home')) return 'home';
     if (pathname.includes('/planner')) return 'planner';
-    if (pathname.includes('/recipes')) return 'recipes';
+    if (pathname.includes('/inventory')) return 'inventory';
     if (pathname.includes('/profile')) return 'profile';
     return 'home';
   };
 
   const shouldShowBottomNav = () => {
-    const routesWithBottomNav = ['/home', '/planner', '/recipes', '/profile'];
+    const routesWithBottomNav = ['/home', '/planner', '/inventory', '/profile'];
     return routesWithBottomNav.some(route => pathname.includes(route)) || pathname === '/';
   };
 
@@ -32,6 +32,7 @@ export default function RootLayout() {
         <Stack.Screen name="index" />
         <Stack.Screen name="home/index" />
         <Stack.Screen name="planner/index" />
+        <Stack.Screen name="inventory/index" />
         <Stack.Screen name="scanner/index" />
         <Stack.Screen name="recipe/recipe" />
         <Stack.Screen name="(auth)/Login" />

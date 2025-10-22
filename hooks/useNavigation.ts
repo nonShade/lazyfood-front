@@ -1,63 +1,39 @@
 import { router } from 'expo-router';
 
 export const useNavigation = () => {
-  const navigateToScanner = () => {
-    router.push('/scanner');
-  };
-
-  const navigateToHome = () => {
-    router.push('/home');
-  };
-
-  const navigateToPlanner = () => {
-    router.push('/planner');
-  };
-
-  const navigateToRecipes = () => {
-    
-  };
-
-  const navigateToProfile = () => {
-    
-  };
-
-  const getNavigationItems = (activeRoute: 'home' | 'recipes' | 'planner' | 'profile') => [
+  const getNavigationItems = (activeRoute: 'home' | 'inventory' | 'planner' | 'profile') => [
     {
       id: 'home',
       icon: 'home',
       label: 'Inicio',
       isActive: activeRoute === 'home',
-      onPress: navigateToHome,
+      onPress: () => router.push('/home'),
     },
     {
-      id: 'recipes',
-      icon: 'book-open',
-      label: 'Recetas',
-      isActive: activeRoute === 'recipes',
-      onPress: navigateToRecipes,
+      id: 'inventory',
+      icon: 'package',
+      label: 'Inventario',
+      isActive: activeRoute === 'inventory',
+      onPress: () => router.push('/inventory'),
     },
     {
       id: 'planner',
       icon: 'calendar',
       label: 'Calendario',
       isActive: activeRoute === 'planner',
-      onPress: navigateToPlanner,
+      onPress: () => router.push('/planner'),
     },
     {
       id: 'profile',
       icon: 'user',
       label: 'Perfil',
       isActive: activeRoute === 'profile',
-      onPress: navigateToProfile,
+      onPress: () => {}, // TODO: Crear ruta /profile
     },
   ];
 
   return {
-    navigateToScanner,
-    navigateToHome,
-    navigateToPlanner,
-    navigateToRecipes,
-    navigateToProfile,
     getNavigationItems,
+    navigateToScanner: () => router.push('/scanner'),
   };
 };
