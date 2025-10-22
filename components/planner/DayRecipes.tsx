@@ -16,7 +16,7 @@ const DayRecipes: React.FC<DayRecipesProps> = ({
   dayPlan,
   onClose,
 }) => {
-  const { getAISuggestions } = usePlanner('user123'); // 'user123' es un ID de usuario de ejemplo
+  const { getAISuggestions } = usePlanner('user123');
   const [suggestionOverrides, setSuggestionOverrides] = useState<Record<string, Recipe>>({});
 
   const weekDays = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
@@ -64,7 +64,7 @@ const DayRecipes: React.FC<DayRecipesProps> = ({
       return dayPlan[mealType];
     }
 
-    // Si está en los próximos 7 días o es una fecha pasada, mostrar sugerencias
+
     if (isInNext7Days() || !isFutureDate()) {
       const suggestions = getAISuggestions(mealType);
       return suggestions[0] || null;
@@ -148,7 +148,7 @@ const DayRecipes: React.FC<DayRecipesProps> = ({
   ];
 
   const renderMealSlot = (mealType: 'breakfast' | 'lunch' | 'dinner') => {
-    // Solo mostrar el slot de "futuro" si es una fecha futura Y no está en los próximos 7 días
+
     if (isFutureDate() && !isInNext7Days()) {
       return renderFutureMealSlot(mealType);
     }

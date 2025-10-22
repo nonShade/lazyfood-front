@@ -13,7 +13,6 @@ const RecipeDetail = () => {
   const { getRecipeById } = usePlanner('user123');
 
   const recipe = id ? (getRecipeById(id) as Recipe | null) : null;
-  console.log('[RecipeDetail] localSearchParams.id=', rawId, 'parsed id=', id, ' -> recipe=', recipe?.name);
 
   return (
     <View style={styles.container}>
@@ -94,12 +93,12 @@ const styles = StyleSheet.create({
     marginTop: -20,
   },
 
-  // Titulo
+
   title: { fontSize: 22, fontWeight: '700', color: '#111827', marginBottom: 10 },
   metaRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 12 },
   meta: { color: '#6B7280', marginRight: 8 },
 
-  // ingredientes
+
   sectionTitle: { fontSize: 16, fontWeight: '700', marginTop: 8, marginBottom: 8, color: '#111827' },
   ingredientRow: {
     flexDirection: 'row',

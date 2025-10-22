@@ -90,7 +90,7 @@ const styles = StyleSheet.create({
   content: {
     flex: 1,
     justifyContent: 'center',
-    // ensure consistent vertical spacing
+
     paddingVertical: 6,
   },
   title: {
