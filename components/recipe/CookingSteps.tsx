@@ -1,16 +1,6 @@
 import { Feather } from '@expo/vector-icons';
-import { useRouter } from 'expo-router';
 import React, { useCallback, useEffect, useRef, useState } from 'react';
-import {
-    FlatList,
-    Image,
-    ListRenderItemInfo,
-    StyleSheet,
-    Text,
-    TouchableOpacity,
-    View,
-    useWindowDimensions,
-} from 'react-native';
+import { FlatList, Image, ListRenderItemInfo, StyleSheet, Text, TouchableOpacity, View, useWindowDimensions } from 'react-native';
 import { Colors } from '../../constants/theme';
 
 type Step = {
@@ -31,7 +21,6 @@ type Props = {
 };
 
 const CookingSteps: React.FC<Props> = ({ steps, initialIndex = 0, onFinish, onBackToDetails }) => {
-  const router = useRouter();
   const { width: screenWidth } = useWindowDimensions();
 
   const listRef = useRef<FlatList<Step> | null>(null);
@@ -78,26 +67,15 @@ const CookingSteps: React.FC<Props> = ({ steps, initialIndex = 0, onFinish, onBa
     };
   }, []);
 
-  const goTo = useCallback(
-    (i: number) => {
-      if (i < 0 || i >= steps.length) return;
-      setIndex(i);
-      listRef.current?.scrollToIndex({ index: i, animated: true });
-    },
-    [steps.length]
-  );
-
-  const handleFinish = () => {
-    if (onFinish) {
-      onFinish();
-    } else {
-      router.replace('/home');
-    }
-  };
+  const goTo = useCallback((i: number) => {
+    if (i < 0 || i >= steps.length) return;
+    setIndex(i);
+    listRef.current?.scrollToIndex({ index: i, animated: true });
+  }, [steps.length]);
 
   const onNext = () => {
     if (index + 1 >= steps.length) {
-      handleFinish();
+      onFinish?.();
     } else {
       goTo(index + 1);
     }
@@ -124,15 +102,34 @@ const CookingSteps: React.FC<Props> = ({ steps, initialIndex = 0, onFinish, onBa
           ) : item.image ? (
             <Image source={item.image} style={styles.image} resizeMode="contain" />
           ) : (
-            <View style={[styles.placeholder, styles.image]} />
+            <View style={[styles.placeholder, styles.image]} /> 
           )}
         </View>
 
         <Text style={styles.stepTitle}>{item.title}</Text>
         <Text style={styles.stepDesc}>{item.description}</Text>
 
-        <TouchableOpacity onPress={onNext} style={styles.mainNavBtn}>
-          <Text style={styles.mainNavBtnText}>{index + 1 >= steps.length ? '¡Terminado!' : 'Siguiente Paso'}</Text>
+        {item.time != null && (
+          <View style={styles.timerRow}>
+            <Text style={[styles.timerText, { color: Colors.light.primary }]}>
+                {formatTime(remaining ?? item.time)}
+            </Text>
+            <TouchableOpacity
+              style={styles.timerButton}
+              onPress={() => setRunning((r) => !r)}
+            >
+              <Text style={styles.timerButtonText}>{running ? 'Pausar' : 'Iniciar'}</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
+        <TouchableOpacity 
+          onPress={onNext} 
+          style={styles.mainNavBtn}
+        >
+          <Text style={styles.mainNavBtnText}>
+            {index + 1 >= steps.length ? '¡Terminado!' : 'Siguiente Paso'}
+          </Text>
         </TouchableOpacity>
       </View>
     );
@@ -140,17 +137,36 @@ const CookingSteps: React.FC<Props> = ({ steps, initialIndex = 0, onFinish, onBa
 
   return (
     <View style={styles.container}>
+      {/* VISTA SUPERIOR */}
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={handleTopBack} style={styles.backButton}>
-          <Feather name="arrow-left" size={24} color="#374151" />
+        
+        {/* BOTÓN SUPERIOR DE NAVEGACIÓN */}
+        <TouchableOpacity 
+            onPress={handleTopBack} 
+            style={styles.backButton}
+        >
+            <Feather 
+                name="arrow-left" 
+                size={24} 
+                color="#374151" 
+            />
         </TouchableOpacity>
 
+        {/* Paso X/Y */}
         <Text style={styles.stepCounter}>Paso {index + 1}/{steps.length}</Text>
-
+        
+        {/* BARRA DE PROGRESO SEGMENTADA */}
         <View style={styles.progressRow}>
-          {steps.map((_, i) => (
-            <TouchableOpacity key={i} onPress={() => goTo(i)} style={[styles.progressBarSegment, i === index && styles.progressBarSegmentActive]} />
-          ))}
+            {steps.map((_, i) => (
+                <TouchableOpacity 
+                    key={i} 
+                    onPress={() => goTo(i)} 
+                    style={[
+                        styles.progressBarSegment, 
+                        i === index && styles.progressBarSegmentActive 
+                    ]}
+                />
+            ))}
         </View>
       </View>
 
@@ -168,7 +184,11 @@ const CookingSteps: React.FC<Props> = ({ steps, initialIndex = 0, onFinish, onBa
           setIndex(newIndex);
         }}
         initialScrollIndex={initialIndex}
-        getItemLayout={(data, index) => ({ length: screenWidth, offset: screenWidth * index, index })}
+        getItemLayout={(data, index) => ({
+          length: screenWidth,
+          offset: screenWidth * index,
+          index,
+        })}
       />
     </View>
   );
@@ -194,34 +214,34 @@ const styles = StyleSheet.create({
     paddingBottom: 25, 
     alignItems: 'center',
   },
-  backButton: { 
+  backButton: {
     position: 'absolute',
     left: 24,
     top: 25,
     zIndex: 10,
     padding: 6,
   },
-  stepCounter: { 
+  stepCounter: {
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
     marginTop: 15,
     marginBottom: 8,
   },
-  progressRow: { 
+  progressRow: {
     flexDirection: 'row',
     width: '100%',
     justifyContent: 'space-between',
     gap: 4,
     marginBottom: 0,
   },
-  progressBarSegment: { 
+  progressBarSegment: {
     flex: 1,
     height: 4,
     backgroundColor: '#E5E7EB',
     borderRadius: 2,
   },
-  progressBarSegmentActive: { 
+  progressBarSegmentActive: {
     backgroundColor: Colors.light.primary,
   },
 
@@ -240,21 +260,27 @@ const styles = StyleSheet.create({
   emoji: {
     fontSize: 90,
   },
-  stepTitle: { fontSize: 24, fontWeight: '700', color: '#111827', marginTop: 6, textAlign: 'center' },
-  stepDesc: { color: '#6B7280', textAlign: 'center', marginTop: 8, fontSize: 16 },
-
-  timerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginTop: 24,
-    paddingVertical: 8,
-    paddingHorizontal: 16,
-    borderRadius: 10,
-    backgroundColor: '#F9FAFB',
+  stepTitle: { fontSize: 24, fontWeight: '700', color: '#111827', marginTop: 6, textAlign: 'center' }, 
+  stepDesc: { color: '#6B7280', textAlign: 'center', marginTop: 8, fontSize: 16 }, 
+  
+  timerRow: { 
+      flexDirection: 'row', 
+      alignItems: 'center', 
+      marginTop: 24, 
+      paddingVertical: 8,
+      paddingHorizontal: 16,
+      borderRadius: 10,
+      backgroundColor: 'transparent', 
   },
-  timerText: { fontSize: 22, fontWeight: '700', marginRight: 16, color: '#111827' },
-  timerButton: { padding: 6, borderRadius: 6, borderWidth: 1, borderColor: '#D1D5DB' },
-  timerButtonText: { color: '#374151', fontWeight: '500' },
+  timerText: { fontSize: 22, fontWeight: '700', marginRight: 16 }, 
+  timerButton: { 
+      paddingVertical: 4, 
+      paddingHorizontal: 10,
+      borderRadius: 6, 
+      borderWidth: 1, 
+      borderColor: '#D1D5DB' 
+  },
+  timerButtonText: { color: '#374151', fontWeight: '500' }, 
 
   mainNavBtn: {
     backgroundColor: Colors.light.primary,
