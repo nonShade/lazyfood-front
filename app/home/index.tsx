@@ -11,10 +11,14 @@ const Home = () => {
   };
 
   const navigationItems = [
-    { id: 'home', icon: 'home', label: 'Inicio', isActive: true, onPress: () => {} },
-    { id: 'recipes', icon: 'book-open', label: 'Recetas', isActive: false, onPress: () => {} },
+    { id: 'home', icon: 'home', label: 'Inicio', isActive: true, onPress: () => { } },
+    {
+      id: 'inventory', icon: 'package', label: 'Inventario', isActive: false, onPress: () => {
+        router.push('/inventory');
+      }
+    },
     { id: 'planner', icon: 'calendar', label: 'Calendario', isActive: false, onPress: () => router.push('/planner') },
-    { id: 'profile', icon: 'user', label: 'Perfil', isActive: false, onPress: () => {} },
+    { id: 'profile', icon: 'user', label: 'Perfil', isActive: false, onPress: () => { } },
   ];
   const { recipes } = usePlanner('user123');
 
@@ -24,7 +28,7 @@ const Home = () => {
         <HomeHeader />
 
         <View style={styles.section}>
-          {}
+          { }
           {(() => {
             const suggestionCount = 3;
             const suggestions = recipes?.slice(0, suggestionCount) ?? [];
