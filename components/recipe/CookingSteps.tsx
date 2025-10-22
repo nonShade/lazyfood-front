@@ -17,6 +17,7 @@ type Step = {
   id: string | number;
   title?: string;
   description?: string;
+  emoji?: string;
   image?: any;
   time?: number;
   timerType?: 'countdown' | 'stopwatch';
@@ -118,7 +119,9 @@ const CookingSteps: React.FC<Props> = ({ steps, initialIndex = 0, onFinish, onBa
     return (
       <View style={[styles.stepWrap, { width: screenWidth }]}>
         <View style={styles.imageWrap}>
-          {item.image ? (
+          {item.emoji ? (
+            <Text style={styles.emoji}>{item.emoji}</Text>
+          ) : item.image ? (
             <Image source={item.image} style={styles.image} resizeMode="contain" />
           ) : (
             <View style={[styles.placeholder, styles.image]} />
@@ -127,15 +130,6 @@ const CookingSteps: React.FC<Props> = ({ steps, initialIndex = 0, onFinish, onBa
 
         <Text style={styles.stepTitle}>{item.title}</Text>
         <Text style={styles.stepDesc}>{item.description}</Text>
-
-        {item.time != null && (
-          <View style={styles.timerRow}>
-            <Text style={styles.timerText}>{formatTime(remaining ?? item.time)}</Text>
-            <TouchableOpacity style={styles.timerButton} onPress={() => setRunning((r) => !r)}>
-              <Text style={styles.timerButtonText}>{running ? 'Pausar' : 'Iniciar'}</Text>
-            </TouchableOpacity>
-          </View>
-        )}
 
         <TouchableOpacity onPress={onNext} style={styles.mainNavBtn}>
           <Text style={styles.mainNavBtnText}>{index + 1 >= steps.length ? '¡Terminado!' : 'Siguiente Paso'}</Text>
@@ -146,36 +140,17 @@ const CookingSteps: React.FC<Props> = ({ steps, initialIndex = 0, onFinish, onBa
 
   return (
     <View style={styles.container}>
-      {/* VISTA SUPERIOR */}
       <View style={styles.topBar}>
-        
-        {/* BOTÓN SUPERIOR DE NAVEGACIÓN */}
-        <TouchableOpacity 
-            onPress={handleTopBack} 
-            style={styles.backButton}
-        >
-            <Feather 
-                name="arrow-left" 
-                size={24} 
-                color="#374151" 
-            />
+        <TouchableOpacity onPress={handleTopBack} style={styles.backButton}>
+          <Feather name="arrow-left" size={24} color="#374151" />
         </TouchableOpacity>
 
-        {/* Paso X/Y */}
         <Text style={styles.stepCounter}>Paso {index + 1}/{steps.length}</Text>
-        
-        {/* BARRA DE PROGRESO SEGMENTADA */}
+
         <View style={styles.progressRow}>
-            {steps.map((_, i) => (
-                <TouchableOpacity 
-                    key={i} 
-                    onPress={() => goTo(i)} 
-                    style={[
-                        styles.progressBarSegment, 
-                        i === index && styles.progressBarSegmentActive 
-                    ]}
-                />
-            ))}
+          {steps.map((_, i) => (
+            <TouchableOpacity key={i} onPress={() => goTo(i)} style={[styles.progressBarSegment, i === index && styles.progressBarSegmentActive]} />
+          ))}
         </View>
       </View>
 
@@ -262,6 +237,9 @@ const styles = StyleSheet.create({
   },
   image: { width: 140, height: 140 },
   placeholder: { width: 140, height: 140, backgroundColor: 'transparent', borderRadius: 8 },
+  emoji: {
+    fontSize: 90,
+  },
   stepTitle: { fontSize: 24, fontWeight: '700', color: '#111827', marginTop: 6, textAlign: 'center' },
   stepDesc: { color: '#6B7280', textAlign: 'center', marginTop: 8, fontSize: 16 },
 
