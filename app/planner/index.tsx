@@ -1,18 +1,17 @@
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  ActivityIndicator,
-} from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { router } from 'expo-router';
-import { usePlanner } from '../../hooks/usePlanner';
+import {
+  ActivityIndicator,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View
+} from 'react-native';
+import BottomNavigation from '../../components/common/BottomNavigation';
 import Calendar from '../../components/planner/Calendar';
 import DayRecipes from '../../components/planner/DayRecipes';
 import StatsCard from '../../components/planner/StatsCard';
-import BottomNavigation from '../../components/common/BottomNavigation';
+import { usePlanner } from '../../hooks/usePlanner';
 
 const PlannerHome = () => {
   const userId = 'user123';
@@ -51,18 +50,16 @@ const PlannerHome = () => {
       onPress: () => router.push('/home'),
     },
     {
-      id: 'recipes',
-      icon: 'book-open',
-      label: 'Recetas',
-      isActive: false,
-      onPress: () => console.log('Navigate to recipes'),
+      id: 'inventory', icon: 'package', label: 'Inventario', isActive: false, onPress: () => {
+        router.push('/inventory');
+      }
     },
     {
       id: 'planner',
       icon: 'calendar',
       label: 'Calendario',
       isActive: true,
-      onPress: () => {},
+      onPress: () => { },
     },
     {
       id: 'profile',
