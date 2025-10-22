@@ -14,9 +14,10 @@ export const Colors = {
     tabIconSelected: tintColorLight,
     border: '#E5E7EB',
     cardBackground: '#F9FAFB',
-    primary: '#D97706',
-    secondary: '#F59E0B',
-    accent: '#FEF3C7',
+    primary: '#D97706', // warm orange
+    secondary: '#10B981', // soft mint green
+    accent: '#10B981', // soft mint green
+    muted: '#FEF3C7', // soft cream
     error: '#EF4444',
     success: '#10B981',
     warning: '#F59E0B',
@@ -30,8 +31,9 @@ export const Colors = {
     border: '#374151',
     cardBackground: '#374151',
     primary: '#F59E0B',
-    secondary: '#D97706',
-    accent: '#92400E',
+    secondary: '#10B981',
+    accent: '#10B981',
+    muted: '#92400E',
     error: '#EF4444',
     success: '#10B981',
     warning: '#F59E0B',
