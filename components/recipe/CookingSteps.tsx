@@ -18,9 +18,7 @@ type Step = {
   title?: string;
   description?: string;
   image?: any;
-  // time in seconds for countdown, optional
   time?: number;
-  // optional type: 'countdown' | 'stopwatch'
   timerType?: 'countdown' | 'stopwatch';
 };
 
@@ -28,7 +26,6 @@ type Props = {
   steps: Step[];
   initialIndex?: number;
   onFinish?: () => void;
-  // Handler para volver a la vista de detalles
   onBackToDetails?: () => void;
 };
 
@@ -39,13 +36,11 @@ const CookingSteps: React.FC<Props> = ({ steps, initialIndex = 0, onFinish, onBa
   const listRef = useRef<FlatList<Step> | null>(null);
   const [index, setIndex] = useState(initialIndex);
 
-  // timer state
   const [remaining, setRemaining] = useState<number | null>(steps[initialIndex]?.time ?? null);
   const timerRef = useRef<any>(null);
   const [running, setRunning] = useState(false);
 
   useEffect(() => {
-    // set remaining when index changes
     const t = steps[index]?.time ?? null;
     setRemaining(t);
     setRunning(false);
@@ -95,7 +90,6 @@ const CookingSteps: React.FC<Props> = ({ steps, initialIndex = 0, onFinish, onBa
     if (onFinish) {
       onFinish();
     } else {
-      // fallback navigate to home
       router.replace('/home');
     }
   };
@@ -152,17 +146,36 @@ const CookingSteps: React.FC<Props> = ({ steps, initialIndex = 0, onFinish, onBa
 
   return (
     <View style={styles.container}>
+      {/* VISTA SUPERIOR */}
       <View style={styles.topBar}>
-        <TouchableOpacity onPress={handleTopBack} style={styles.backButton}>
-          <Feather name="arrow-left" size={24} color="#374151" />
+        
+        {/* BOTÓN SUPERIOR DE NAVEGACIÓN */}
+        <TouchableOpacity 
+            onPress={handleTopBack} 
+            style={styles.backButton}
+        >
+            <Feather 
+                name="arrow-left" 
+                size={24} 
+                color="#374151" 
+            />
         </TouchableOpacity>
 
+        {/* Paso X/Y */}
         <Text style={styles.stepCounter}>Paso {index + 1}/{steps.length}</Text>
-
+        
+        {/* BARRA DE PROGRESO SEGMENTADA */}
         <View style={styles.progressRow}>
-          {steps.map((_, i) => (
-            <View key={i} style={[styles.progressBarSegment, i === index && styles.progressBarSegmentActive]} />
-          ))}
+            {steps.map((_, i) => (
+                <TouchableOpacity 
+                    key={i} 
+                    onPress={() => goTo(i)} 
+                    style={[
+                        styles.progressBarSegment, 
+                        i === index && styles.progressBarSegmentActive 
+                    ]}
+                />
+            ))}
         </View>
       </View>
 
@@ -203,37 +216,37 @@ const styles = StyleSheet.create({
   topBar: {
     paddingTop: 40,
     paddingHorizontal: 24,
+    paddingBottom: 25, 
     alignItems: 'center',
-    marginBottom: 20,
   },
-  backButton: {
+  backButton: { 
     position: 'absolute',
     left: 24,
-    top: 48,
+    top: 25,
     zIndex: 10,
     padding: 6,
   },
-  stepCounter: {
+  stepCounter: { 
     fontSize: 16,
     fontWeight: '600',
     color: '#333',
-    marginTop: 10,
+    marginTop: 15,
     marginBottom: 8,
   },
-  progressRow: {
+  progressRow: { 
     flexDirection: 'row',
     width: '100%',
     justifyContent: 'space-between',
     gap: 4,
-    marginBottom: 10,
+    marginBottom: 0,
   },
-  progressBarSegment: {
+  progressBarSegment: { 
     flex: 1,
     height: 4,
     backgroundColor: '#E5E7EB',
     borderRadius: 2,
   },
-  progressBarSegmentActive: {
+  progressBarSegmentActive: { 
     backgroundColor: Colors.light.primary,
   },
 
