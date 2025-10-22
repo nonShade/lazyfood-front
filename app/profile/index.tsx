@@ -73,7 +73,7 @@ const styles = StyleSheet.create({
   heading: { fontSize: 28, fontWeight: '800', marginBottom: 16 },
   headerRow: { flexDirection: 'row', alignItems: 'center', marginBottom: 16 },
   avatar: { width: 72, height: 72, borderRadius: 36, backgroundColor: '#F59E0B', justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  avatarText: { color: '#FFF', fontWeight: '700' },
+  avatarText: { color: '#FFF', fontWeight: '700', fontSize: 24 }, 
   name: { fontSize: 18, fontWeight: '700' },
   level: { color: '#6B7280' },
   card: { backgroundColor: '#FEF3E0', borderRadius: 10, padding: 14, marginBottom: 12 },
