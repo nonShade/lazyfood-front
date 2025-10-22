@@ -43,18 +43,18 @@ const Calendar: React.FC<CalendarProps> = ({
 
   const hasRecipesForDate = (day: number): boolean => {
     if (!weekPlan?.days) return false;
-    
+
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
     const dateString = date.toISOString().split('T')[0];
-    
+
     const dayPlan = weekPlan.days.find((d: DayPlan) => d.date === dateString);
     return Boolean(dayPlan?.breakfast || dayPlan?.lunch || dayPlan?.dinner);
   };
 
   const isDateSelected = (day: number): boolean => {
     return selectedDate.getDate() === day &&
-           selectedDate.getMonth() === currentMonth.getMonth() &&
-           selectedDate.getFullYear() === currentMonth.getFullYear();
+      selectedDate.getMonth() === currentMonth.getMonth() &&
+      selectedDate.getFullYear() === currentMonth.getFullYear();
   };
 
   const { firstDay, daysInMonth } = getDaysInMonth(currentMonth);
@@ -107,7 +107,7 @@ const Calendar: React.FC<CalendarProps> = ({
 
   return (
     <View style={styles.container}>
-      {/* Month Navigation */}
+
       <View style={styles.monthNavigation}>
         <TouchableOpacity onPress={() => onMonthChange(-1)} activeOpacity={0.7}>
           <Feather name="chevron-left" size={24} color="#D97706" />
@@ -120,9 +120,9 @@ const Calendar: React.FC<CalendarProps> = ({
         </TouchableOpacity>
       </View>
 
-      {/* Calendar */}
+
       <View style={styles.calendarContainer}>
-        {/* Week days header */}
+
         <View style={styles.weekDaysRow}>
           {weekDays.map((day, index) => (
             <View key={index} style={styles.weekDayCell}>
@@ -131,18 +131,14 @@ const Calendar: React.FC<CalendarProps> = ({
           ))}
         </View>
 
-        {/* Calendar grid */}
+
         <View style={styles.calendarGrid}>{renderCalendar()}</View>
 
-        {/* Legend */}
+
         <View style={styles.legend}>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, styles.recipeDot]} />
             <Text style={styles.legendText}>Días con recetas</Text>
-          </View>
-          <View style={styles.legendItem}>
-            <View style={[styles.legendDot, styles.suggestedDot]} />
-            <Text style={styles.legendText}>Días sugeridos</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, styles.selectedDot]} />

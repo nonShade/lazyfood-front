@@ -1,17 +1,15 @@
-import { Feather } from '@expo/vector-icons';
-import { router } from 'expo-router';
 import {
-  ActivityIndicator,
-  ScrollView,
-  StyleSheet,
+  View,
   Text,
-  View
+  StyleSheet,
+  ScrollView,
+  ActivityIndicator,
 } from 'react-native';
-import BottomNavigation from '../../components/common/BottomNavigation';
+import { Feather } from '@expo/vector-icons';
+import { usePlanner } from '../../hooks/usePlanner';
 import Calendar from '../../components/planner/Calendar';
 import DayRecipes from '../../components/planner/DayRecipes';
 import StatsCard from '../../components/planner/StatsCard';
-import { usePlanner } from '../../hooks/usePlanner';
 
 const PlannerHome = () => {
   const userId = 'user123';
@@ -34,41 +32,8 @@ const PlannerHome = () => {
     setCurrentMonth(newMonth);
   };
 
-  const handleScannerPress = () => {
-    // Scanner functionality 
-  };
-
   const dayPlan = getDayPlan(selectedDate);
   const stats = getStatsForMonth();
-
-  const navigationItems = [
-    {
-      id: 'home',
-      icon: 'home',
-      label: 'Inicio',
-      isActive: false,
-      onPress: () => router.push('/home'),
-    },
-    {
-      id: 'inventory', icon: 'package', label: 'Inventario', isActive: false, onPress: () => {
-        router.push('/inventory');
-      }
-    },
-    {
-      id: 'planner',
-      icon: 'calendar',
-      label: 'Calendario',
-      isActive: true,
-      onPress: () => { },
-    },
-    {
-      id: 'profile',
-      icon: 'user',
-      label: 'Perfil',
-      isActive: false,
-      onPress: () => console.log('Navigate to profile'),
-    },
-  ];
 
   if (error) {
     return (
@@ -114,10 +79,6 @@ const PlannerHome = () => {
 
         <View style={{ height: 100 }} />
       </ScrollView>
-
-
-
-      <BottomNavigation items={navigationItems} onScannerPress={handleScannerPress} />
     </View>
   );
 };

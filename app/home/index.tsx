@@ -1,25 +1,9 @@
-import { router } from 'expo-router';
 import { ScrollView, StyleSheet, View } from 'react-native';
-import BottomNavigation from '../../components/common/BottomNavigation';
 import HomeHeader from '../../components/home/HomeHeader';
 import QuickSuggestionCard from '../../components/home/QuickSuggestionCard';
 import { usePlanner } from '../../hooks/usePlanner';
 
 const Home = () => {
-  const handleScannerPress = () => {
-    // Scanner functionality 
-  };
-
-  const navigationItems = [
-    { id: 'home', icon: 'home', label: 'Inicio', isActive: true, onPress: () => { } },
-    {
-      id: 'inventory', icon: 'package', label: 'Inventario', isActive: false, onPress: () => {
-        router.push('/inventory');
-      }
-    },
-    { id: 'planner', icon: 'calendar', label: 'Calendario', isActive: false, onPress: () => router.push('/planner') },
-    { id: 'profile', icon: 'user', label: 'Perfil', isActive: false, onPress: () => { } },
-  ];
   const { recipes } = usePlanner('user123');
 
   return (
@@ -28,7 +12,6 @@ const Home = () => {
         <HomeHeader />
 
         <View style={styles.section}>
-          { }
           {(() => {
             const suggestionCount = 3;
             const suggestions = recipes?.slice(0, suggestionCount) ?? [];
@@ -68,8 +51,6 @@ const Home = () => {
 
         <View style={{ height: 120 }} />
       </ScrollView>
-
-      <BottomNavigation items={navigationItems} onScannerPress={handleScannerPress} />
     </View>
   );
 };
