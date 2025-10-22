@@ -17,10 +17,10 @@ const RecipeDetail = () => {
 
   return (
     <View style={styles.container}>
-      {}
+      {/* scroll */}
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.scroll}>
 
-        {}
+        {/* back */}
         <TouchableOpacity style={styles.back} onPress={() => router.back()}>
           <Feather name="arrow-left" size={20} color="#374151" />
         </TouchableOpacity>
@@ -59,7 +59,11 @@ const RecipeDetail = () => {
                 </View>
               ))}
 
-              <TouchableOpacity style={styles.primaryButton} activeOpacity={0.85}>
+              <TouchableOpacity
+                style={styles.primaryButton}
+                activeOpacity={0.85}
+                onPress={() => router.push(`/recipe/cooking-mode/cooking?id=${recipe.id}` as any)}
+              >
                 <Text style={styles.primaryButtonText}>▷ Cocina Guiada</Text>
               </TouchableOpacity>
             </>

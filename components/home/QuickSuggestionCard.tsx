@@ -45,9 +45,9 @@ const QuickSuggestionCard: React.FC<Props> = ({
         <Text style={styles.title}>{title}</Text>
         <View style={styles.metaRow}>
           <Text style={styles.metaText}>⏱ {time}</Text>
-          {typeof calories === 'number' && <Text style={styles.metaText}> • {calories} kcal</Text>}
-          <Text style={styles.metaText}> • {difficulty}</Text>
-          <Text style={styles.metaText}> • {Array.isArray(ingredients) ? ingredients.length : ingredients ?? 0} ingredientes</Text>
+          {typeof calories === 'number' && <Text style={styles.metaText}> {calories} kcal</Text>}
+          <Text style={styles.metaText}>{difficulty}</Text>
+          <Text style={styles.metaText}>{Array.isArray(ingredients) ? ingredients.length : ingredients ?? 0} ingredientes</Text>
         </View>
       </View>
 
