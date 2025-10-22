@@ -17,7 +17,7 @@ type EditIngredientModalProps = {
 };
 
 const EditIngredientModal = ({ visible, ingredient, onClose, onSave, onDelete }: EditIngredientModalProps) => {
-    const [quantity, setQuantity] = useState(0);
+    const [quantity, setQuantity] = useState(1);
 
     useEffect(() => {
         if (ingredient) {
@@ -57,7 +57,7 @@ const EditIngredientModal = ({ visible, ingredient, onClose, onSave, onDelete }:
                         <View style={styles.quantityControls}>
                             <TouchableOpacity
                                 style={styles.quantityButton}
-                                onPress={() => setQuantity(Math.max(0, quantity - 1))}
+                                onPress={() => setQuantity(Math.max(1, quantity - 1))}
                             >
                                 <Text style={styles.quantityButtonText}>−</Text>
                             </TouchableOpacity>
