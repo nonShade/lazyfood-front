@@ -17,7 +17,13 @@ export default function RootLayout() {
 
   const shouldShowBottomNav = () => {
     const routesWithBottomNav = ['/home', '/planner', '/inventory', '/profile'];
-    return routesWithBottomNav.some(route => pathname.includes(route)) || pathname === '/';
+    const routesWithoutBottomNav = ['/', '/(auth)/Login'];
+
+    if (routesWithoutBottomNav.includes(pathname) || pathname.includes('(auth)') || pathname.includes('onboarding')) {
+      return false;
+    }
+
+    return routesWithBottomNav.some(route => pathname.includes(route));
   };
 
   const navigationItems = getNavigationItems(getActiveRoute());
@@ -37,11 +43,11 @@ export default function RootLayout() {
         <Stack.Screen name="recipe/recipe" />
         <Stack.Screen name="(auth)/Login" />
       </Stack>
-      
+
       {shouldShowBottomNav() && (
-        <BottomNavigation 
-          items={navigationItems} 
-          onScannerPress={navigateToScanner} 
+        <BottomNavigation
+          items={navigationItems}
+          onScannerPress={navigateToScanner}
         />
       )}
     </View>
