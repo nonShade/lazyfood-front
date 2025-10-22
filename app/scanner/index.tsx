@@ -9,7 +9,7 @@ export default function ScannerScreen() {
   };
 
   const handleConfirm = () => {
-    router.push('/recipe/recipe');
+    router.push('/inventory');
   };
 
   return (
