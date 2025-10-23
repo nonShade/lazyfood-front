@@ -3,6 +3,7 @@ import React from 'react';
 import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Button from '../../components/ui/Button';
 import { Colors } from '../../constants/theme';
+import { setPreferences } from '../../services/storage/preferences';
 
 const diets = ['Omnívora', 'Vegetariana', 'Vegana', 'Pescetariana'];
 const allergies = ['Sin alergias', 'Gluten', 'Lácteos', 'Frutos secos'];
@@ -24,12 +25,28 @@ export default function EditPreferences() {
     }
   };
 
+  const toggleAllergy = (arr: string[], setArr: (v: string[]) => void, val: string) => {
+    if (val === 'Sin alergias') {
+      setArr(['Sin alergias']);
+      return;
+    }
+
+    if (arr.includes(val)) {
+      const next = arr.filter(a => a !== val);
+      if (next.length === 0) setArr(['Sin alergias']);
+      else setArr(next);
+    } else {
+      setArr([...arr.filter(a => a !== 'Sin alergias'), val]);
+    }
+  };
+
   const handleSave = () => {
     console.log('Preferencias guardadas:', {
       diet: selectedDiet,
       allergies: selectedAllergies,
       likes: selectedLikes,
     });
+        setPreferences({ diet: selectedDiet, allergies: selectedAllergies, likes: selectedLikes });
     router.back();
   };
 
@@ -70,7 +87,7 @@ export default function EditPreferences() {
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Alergias</Text>
           {renderChips(allergies, selectedAllergies, (item) => 
-            toggleMulti(selectedAllergies, setSelectedAllergies, item)
+            toggleAllergy(selectedAllergies, setSelectedAllergies, item)
           )}
         </View>
 

@@ -6,12 +6,26 @@ import DeleteAccountModal from '../../components/profile/DeleteAccountModal';
 const ProfileScreen: React.FC = () => {
   const router = useRouter();
   const [modalVisible, setModalVisible] = React.useState(false);
-
+  const [prefs, setPrefs] = React.useState<{ diet?: string; allergies?: string[]; likes?: string[] } | null>(null);
 
   const handleConfirmDelete = () => {
     setModalVisible(false);
     router.replace('/');
   };
+
+  React.useEffect(() => {
+    let mounted = true;
+    let unsub: (() => void) | null = null;
+    import('../../services/storage/preferences').then(mod => {
+      if (!mounted) return;
+      setPrefs(mod.getPreferences());
+      unsub = mod.subscribePreferences((p: any) => setPrefs(p));
+    });
+    return () => {
+      mounted = false;
+      if (unsub) unsub();
+    };
+  }, []);
 
   return (
     <View style={styles.container}>
@@ -29,8 +43,12 @@ const ProfileScreen: React.FC = () => {
         <View style={styles.card}>
           <Text style={styles.cardTitle}>Preferencias alimenticias</Text>
           <View style={styles.badgesRow}>
-            <View style={styles.badge}><Text style={styles.badgeText}>Omnívora</Text></View>
-            <View style={[styles.badge, { backgroundColor: '#D1FAE5' }]}><Text style={[styles.badgeText, { color: '#065F46' }]}>Sin alergias</Text></View>
+            <View style={styles.badge}><Text style={styles.badgeText}>{prefs?.diet ?? 'Omnívora'}</Text></View>
+            {(prefs?.allergies ?? ['Sin alergias']).map(a => (
+              <View key={a} style={[styles.badge, { backgroundColor: '#D1FAE5', marginLeft: 8 }]}>
+                <Text style={[styles.badgeText, { color: '#065F46' }]}>{a}</Text>
+              </View>
+            ))}
           </View>
         </View>
 
