@@ -1,17 +1,48 @@
 import { useRouter } from 'expo-router';
-import { Platform, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { Platform, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Button from '../../components/ui/Button';
 import { Colors } from '../../constants/theme';
 
 const diets = ['Omnívora', 'Vegetariana', 'Vegana', 'Pescetariana'];
 const allergies = ['Sin alergias', 'Gluten', 'Lácteos', 'Frutos secos'];
-const likes = ['Picante', 'Dulce', 'Salado', 'Ácido'];
 
 export default function EditPreferences() {
   const router = useRouter();
 
+  const [selectedDiet, setSelectedDiet] = React.useState<string>('Omnívora');
+  const [selectedAllergies, setSelectedAllergies] = React.useState<string[]>(['Sin alergias']);
+
+  const toggleMulti = (arr: string[], setArr: (v: string[]) => void, val: string) => {
+    if (arr.includes(val)) setArr(arr.filter(a => a !== val));
+    else setArr([...arr, val]);
+  };
+
+  const renderChips = (
+    data: string[],
+    selectedItems: string | string[],
+    onPress: (item: string) => void
+  ) => (
+    <View style={styles.chipsRow}>
+      {data.map(item => {
+        const isActive = Array.isArray(selectedItems)
+          ? selectedItems.includes(item)
+          : selectedItems === item;
+        return (
+          <TouchableOpacity
+            key={item}
+            style={[styles.chip, isActive && styles.chipActive]}
+            onPress={() => onPress(item)}
+          >
+            <Text style={[styles.chipText, isActive && styles.chipTextActive]}>{item}</Text>
+          </TouchableOpacity>
+        );
+      })}
+    </View>
+  );
+
   const handleSave = () => {
-    console.log('Preferencias guardadas');
+    console.log('Preferencias guardadas:', { diet: selectedDiet, allergies: selectedAllergies });
     router.back();
   };
 
@@ -22,14 +53,14 @@ export default function EditPreferences() {
 
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Dieta</Text>
+          {renderChips(diets, selectedDiet, setSelectedDiet)}
         </View>
 
         <View style={styles.sectionContainer}>
           <Text style={styles.sectionTitle}>Alergias</Text>
-        </View>
-
-        <View style={styles.sectionContainer}>
-          <Text style={styles.sectionTitle}>Gustos</Text>
+          {renderChips(allergies, selectedAllergies, item =>
+            toggleMulti(selectedAllergies, setSelectedAllergies, item)
+          )}
         </View>
 
         <View style={styles.actionsRow}>
@@ -50,13 +81,19 @@ const styles = StyleSheet.create({
   content: { padding: 20, paddingTop: Platform.OS === 'android' ? 40 : 20, paddingBottom: 40 },
   heading: { fontSize: 26, fontWeight: '800', color: Colors.light.text, marginBottom: 20 },
   sectionContainer: { marginBottom: 20 },
-  sectionTitle: {
-    fontSize: 17,
-    fontWeight: '700',
-    color: Colors.light.text,
-    marginTop: 10,
-    marginBottom: 12,
+  sectionTitle: { fontSize: 17, fontWeight: '700', color: Colors.light.text, marginTop: 10, marginBottom: 12 },
+  chipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 10 },
+  chip: {
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 25,
+    backgroundColor: Colors.light.cardBackground,
+    borderWidth: 1,
+    borderColor: Colors.light.border,
   },
+  chipActive: { backgroundColor: Colors.light.primary, borderColor: Colors.light.primary },
+  chipText: { color: Colors.light.text, fontSize: 14, fontWeight: '500' },
+  chipTextActive: { color: '#FFF', fontWeight: '700' },
   actionsRow: { flexDirection: 'row', marginTop: 30 },
   cancelButton: { flex: 1, marginRight: 10 },
   saveButton: { flex: 1, marginLeft: 10 },
