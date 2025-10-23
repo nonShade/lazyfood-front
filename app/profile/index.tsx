@@ -50,7 +50,9 @@ const ProfileScreen: React.FC = () => {
           </View>
         </View>
 
-        <TouchableOpacity style={styles.actionBtn}><Text style={styles.actionText}>Editar preferencias</Text></TouchableOpacity>
+        <TouchableOpacity style={styles.actionBtn} onPress={() => router.push('/profile/edit-preferences' as any)}>
+          <Text style={styles.actionText}>Editar preferencias</Text>
+        </TouchableOpacity>
         <TouchableOpacity
           style={[styles.actionBtn, styles.blackBtn]}
           onPress={() => router.replace('/(auth)/Login' as any)}
