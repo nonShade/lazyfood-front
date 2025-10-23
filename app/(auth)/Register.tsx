@@ -38,19 +38,10 @@ export default function Register() {
 
   const validatePassword = (password: string): { isValid: boolean; strength: 'weak' | 'medium' | 'strong' } => {
     const minLength = password.length >= 8;
-    const hasUpperCase = /[A-Z]/.test(password);
-    const hasNumber = /\d/.test(password);
-    const hasSpecialChar = /[!@#$%^&*(),.?":{}|<>]/.test(password);
-
-    const criteriaCount = [minLength, hasUpperCase, hasNumber, hasSpecialChar].filter(Boolean).length;
-
-    let strength: 'weak' | 'medium' | 'strong' = 'weak';
-    if (criteriaCount >= 4) strength = 'strong';
-    else if (criteriaCount >= 2) strength = 'medium';
 
     return {
-      isValid: minLength && hasUpperCase && hasNumber && hasSpecialChar,
-      strength
+      isValid: minLength,
+      strength: minLength ? 'strong' : 'weak'
     };
   };
 
@@ -71,7 +62,7 @@ export default function Register() {
     if (!password) {
       newErrors.password = 'La contraseña es requerida';
     } else if (!passwordValidation.isValid) {
-      newErrors.password = 'La contraseña debe tener al menos 8 caracteres, una mayúscula, un número y un carácter especial';
+      newErrors.password = 'La contraseña debe tener al menos 8 caracteres';
     }
 
     if (!termsAccepted) {
@@ -212,8 +203,8 @@ export default function Register() {
                 </TouchableOpacity>
               </View>
             </TouchableOpacity>
-            {errors.terms && <Text style={styles.errorText}>{errors.terms}</Text>}
           </View>
+          {errors.terms && <Text style={styles.checkboxErrorText}>{errors.terms}</Text>}
 
           <TouchableOpacity
             style={[styles.primaryButton, loading && styles.primaryButtonDisabled]}
@@ -404,6 +395,13 @@ const styles = StyleSheet.create({
     color: Colors.light.error,
     fontSize: 12,
     marginTop: -8,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
+  checkboxErrorText: {
+    color: Colors.light.error,
+    fontSize: 12,
+    marginTop: -16,
     marginBottom: 8,
     marginLeft: 4,
   },
