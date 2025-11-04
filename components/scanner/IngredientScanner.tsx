@@ -1,220 +1,376 @@
 import { Feather } from '@expo/vector-icons';
-import { CameraView, CameraType, useCameraPermissions } from 'expo-camera';
-import React, { useState, useRef } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Animated } from 'react-native';
-import Button from '../ui/Button';
+import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
+import * as ImagePicker from 'expo-image-picker';
+import React, { useRef, useState } from 'react';
+import { ActivityIndicator, Animated, Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useImageUpload } from '../../hooks/useImageUpload';
+import { DetectedIngredient } from '../../services/scanner/scannerService';
 import Badge from '../ui/Badge';
+import Button from '../ui/Button';
 import Card from '../ui/Card';
 
 interface IngredientScannerProps {
   onBack?: () => void;
-  onConfirm?: (ingredients: string[]) => void;
+  onConfirm?: (ingredients: DetectedIngredient[]) => void;
 }
-
-const MOCK_DETECTED_INGREDIENTS = [
-  "Tomate",
-  "Ajo",
-  "Cebolla",
-  "Aceite de oliva",
-  "Pasta",
-  "Queso parmesano"
-];
-
-const FLOATING_BADGES = [
-  { emoji: "🍅", text: "Tomate", style: { top: 8, left: 8 } },
-  { emoji: "🧄", text: "Ajo", style: { top: 20, right: 12 } },
-  { emoji: "🧅", text: "Cebolla", style: { bottom: 16, left: 12 } }
-];
 
 const IngredientScanner: React.FC<IngredientScannerProps> = ({
   onBack,
-  onConfirm
+  onConfirm,
 }) => {
   const [facing, setFacing] = useState<CameraType>('back');
   const [permission, requestPermission] = useCameraPermissions();
-  const [detectedIngredients, setDetectedIngredients] = useState<string[]>([]);
+  const [detectedIngredients, setDetectedIngredients] = useState<DetectedIngredient[]>([]);
   const [showResults, setShowResults] = useState(false);
-  const [isScanning, setIsScanning] = useState(false);
+  const [dragOver, setDragOver] = useState(false);
+  const [uploadedImageUri, setUploadedImageUri] = useState<string | null>(null);
+  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
+  const [containerLayout, setContainerLayout] = useState<{ width: number; height: number } | null>(null);
+  const { upload, isUploading, error, setError } = useImageUpload();
 
   const slideAnim = useRef(new Animated.Value(300)).current;
-  const scanButtonScale = useRef(new Animated.Value(1)).current;
 
-  if (!permission) {
-    return <View style={styles.container} />;
-  }
+  if (!permission) return <View style={styles.container} />;
 
   if (!permission.granted) {
     return (
       <View style={styles.container}>
         <View style={styles.permissionContainer}>
-          <Text style={styles.permissionText}>Necesitamos acceso a la cámara</Text>
-          <Text style={styles.permissionSubtext}>Para escanear los ingredientes en tiempo real</Text>
+          <Text style={styles.permissionText}>Camera access required</Text>
+          <Text style={styles.permissionSubtext}>To scan ingredients in real time</Text>
           <Button onPress={requestPermission} style={styles.permissionButton}>
-            Permitir acceso a la cámara
+            Allow camera access
           </Button>
         </View>
       </View>
     );
   }
 
-  const handleScan = async () => {
-    setIsScanning(true);
+  const handleTakePhoto = async () => {
+    const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
+    const mediaPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    Animated.sequence([
-      Animated.timing(scanButtonScale, {
-        toValue: 0.9,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-      Animated.timing(scanButtonScale, {
-        toValue: 1,
-        duration: 100,
-        useNativeDriver: true,
-      }),
-    ]).start();
+    if (cameraPermission.status !== 'granted' || mediaPermission.status !== 'granted') {
+      alert('Se requieren permisos de cámara y almacenamiento.');
+      return;
+    }
 
-    setTimeout(() => {
-      setDetectedIngredients(MOCK_DETECTED_INGREDIENTS);
-      setShowResults(true);
-      setIsScanning(false);
+    const result = await ImagePicker.launchCameraAsync({
+      mediaTypes: ImagePicker.MediaTypeOptions.Images,
+      allowsEditing: false,
+      quality: 1,
+    });
 
-      Animated.timing(slideAnim, {
-        toValue: 0,
-        duration: 600,
-        useNativeDriver: true,
-      }).start();
-    }, 2000);
+    if (!result.canceled && result.assets[0]) {
+      const asset = result.assets[0];
+      await handleUpload(
+        asset.uri,
+        asset.fileName || 'photo.jpg',
+        'image/jpeg'
+      );
+    }
+  };
+
+  const handleUpload = async (uri: string, fileName: string, mimeType: string) => {
+    try {
+      setUploadedImageUri(uri);
+      setError(null);
+      const data = await upload(uri, fileName, mimeType);
+
+      if (data.success) {
+        setDetectedIngredients(data.inventory);
+        setImageDimensions(data.image_dimensions || null);
+        setShowResults(true);
+        Animated.timing(slideAnim, {
+          toValue: 0,
+          duration: 600,
+          useNativeDriver: true,
+        }).start();
+      }
+    } catch (err: any) {
+      console.error('❌ Upload failed:', err);
+      // El error ya está manejado por el hook
+    } finally {
+      setDragOver(false);
+    }
+  };
+
+  const handlePickFile = async () => {
+    if (Platform.OS === 'web') {
+      const input = document.createElement('input');
+      input.type = 'file';
+      input.accept = 'image/*';
+      input.onchange = async (e: any) => {
+        const file = e.target.files[0];
+        if (file) {
+          const uri = URL.createObjectURL(file);
+          await handleUpload(uri, file.name, file.type);
+        }
+      };
+      input.click();
+    } else {
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: false,
+        quality: 1,
+      });
+
+      if (!result.canceled && result.assets[0]) {
+        const asset = result.assets[0];
+        await handleUpload(
+          asset.uri,
+          asset.fileName || 'upload.jpg',
+          'image/jpeg'
+        );
+      }
+    }
+  };
+
+  const handleDragOver = (e: any) => {
+    e.preventDefault();
+    setDragOver(true);
+  };
+
+  const handleDragLeave = () => setDragOver(false);
+
+  const handleDrop = async (e: any) => {
+    e.preventDefault();
+    setDragOver(false);
+    const file = e.dataTransfer.files[0];
+    if (file && file.type.startsWith('image/')) {
+      const uri = URL.createObjectURL(file);
+      await handleUpload(uri, file.name, file.type);
+    }
   };
 
   const handleConfirm = () => {
     onConfirm?.(detectedIngredients);
   };
 
-  function toggleCameraFacing() {
-    setFacing(current => (current === 'back' ? 'front' : 'back'));
-  }
+  const handleReset = () => {
+    setShowResults(false);
+    setUploadedImageUri(null);
+    setDetectedIngredients([]);
+    setError(null);
+    Animated.timing(slideAnim, {
+      toValue: 300,
+      duration: 500,
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
+
+  const getBoundingBoxStyle = (bbox: { x: number; y: number; width: number; height: number }) => {
+    if (!containerLayout || !imageDimensions) return {};
+
+    const scaleX = containerLayout.width / imageDimensions.width;
+    const scaleY = containerLayout.height / imageDimensions.height;
+    const scale = Math.min(scaleX, scaleY);
+
+    const scaledWidth = imageDimensions.width * scale;
+    const scaledHeight = imageDimensions.height * scale;
+
+    const offsetX = (containerLayout.width - scaledWidth) / 2;
+    const offsetY = (containerLayout.height - scaledHeight) / 2;
+
+    const left = offsetX + (bbox.x - bbox.width / 2) * scaledWidth;
+    const top = offsetY + (bbox.y - bbox.height / 2) * scaledHeight;
+    const width = bbox.width * scaledWidth;
+    const height = bbox.height * scaledHeight;
+
+    return {
+      position: 'absolute' as const,
+      left,
+      top,
+      width,
+      height,
+      borderWidth: 3,
+      borderColor: '#fbbf24',
+      borderRadius: 8,
+      backgroundColor: 'rgba(251, 191, 36, 0.1)',
+    };
+  };
+
+  const translateYImage = slideAnim.interpolate({
+    inputRange: [0, 300],
+    outputRange: [-150, 0],
+    extrapolate: 'clamp',
+  });
 
   return (
-    <View style={styles.container}>
+    <View
+      style={styles.container}
+      {...(Platform.OS === 'web'
+        ? {
+          onDragOver: handleDragOver,
+          onDragLeave: handleDragLeave,
+          onDrop: handleDrop,
+        }
+        : {})}
+    >
       <View style={styles.header}>
-        <TouchableOpacity
-          style={styles.backButton}
-          onPress={onBack}
-        >
+        <TouchableOpacity style={styles.backButton} onPress={onBack}>
           <Feather name="arrow-left" size={24} color="#FFFFFF" />
         </TouchableOpacity>
 
-        <Text style={styles.headerTitle}>Escanear ingredientes</Text>
+        <Text style={styles.headerTitle}>Escanear Ingredientes</Text>
 
-        <TouchableOpacity
-          style={styles.flipButton}
-          onPress={toggleCameraFacing}
-        >
-          <Feather name="rotate-cw" size={20} color="#FFFFFF" />
-        </TouchableOpacity>
+        <View style={{ width: 30 }} />
       </View>
 
-      <View style={styles.cameraContainer}>
-        <CameraView style={styles.camera} facing={facing}>
-          <View style={styles.overlay}>
-            <View style={styles.scanFrame}>
-              {isScanning && FLOATING_BADGES.map((badge, index) => (
+      <View
+        style={styles.cameraContainer}
+        onLayout={(e) => {
+          const { width, height } = e.nativeEvent.layout;
+          setContainerLayout({ width, height });
+        }}
+      >
+        {uploadedImageUri ? (
+          <Animated.View
+            style={[
+              styles.imagePreviewContainer,
+              { transform: [{ translateY: translateYImage }] },
+            ]}
+          >
+            <Image
+              source={{ uri: uploadedImageUri }}
+              style={styles.imagePreview}
+              resizeMode="contain"
+            />
+            {detectedIngredients.map((ingredient, index) =>
+              ingredient.bounding_box ? (
                 <View
                   key={index}
-                  style={[styles.floatingBadge, badge.style]}
+                  style={{
+                    ...getBoundingBoxStyle(ingredient.bounding_box),
+                    display: 'flex',
+                    justifyContent: 'center',
+                    alignItems: 'center',
+                  }}
                 >
-                  <Badge variant="primary">
-                    {badge.emoji} {badge.text}
-                  </Badge>
+                  <View style={styles.labelContainer}>
+                    <Text style={styles.labelText}>
+                      {ingredient.emoji} {capitalize(ingredient.name.split(' ')[0])}
+                    </Text>
+                  </View>
                 </View>
-              ))}
-            </View>
-          </View>
-        </CameraView>
-
-        <View style={styles.instructionsContainer}>
-          <Animated.View style={[styles.scanButtonContainer, { transform: [{ scale: scanButtonScale }] }]}>
-            <TouchableOpacity
-              style={[styles.scanButton, isScanning && styles.scanButtonActive]}
-              onPress={handleScan}
-              disabled={isScanning}
-            >
-              {isScanning ? (
-                <View style={styles.scanningIndicator}>
-                  <Feather name="loader" size={32} color="#FFFFFF" />
-                  <Text style={styles.scanButtonText}>Escaneando...</Text>
-                </View>
-              ) : (
-                <View style={styles.scanContent}>
-                  <Feather name="camera" size={32} color="#FFFFFF" />
-                  <Text style={styles.scanButtonText}>Escanear</Text>
-                </View>
-              )}
-            </TouchableOpacity>
+              ) : null
+            )}
           </Animated.View>
-        </View>
+        ) : (
+          <CameraView style={styles.camera} facing={facing}>
+            {Platform.OS === 'web' && (
+              <View style={[styles.dropZone, dragOver && styles.dropZoneActive]}>
+                <Text style={styles.dropText}>
+                  {isUploading
+                    ? 'Uploading...'
+                    : dragOver
+                      ? 'Drop your image here!'
+                      : 'Drag & drop an image or click below to upload'}
+                </Text>
+                <Button onPress={handlePickFile} disabled={isUploading}>
+                  {isUploading ? 'Processing...' : 'Upload Image'}
+                </Button>
+              </View>
+            )}
+          </CameraView>
+        )}
       </View>
 
+      {!uploadedImageUri && Platform.OS !== 'web' && (
+        <View style={styles.uploadButtonContainer}>
+          <Button
+            onPress={handleTakePhoto}
+            disabled={isUploading}
+            size="lg"
+            style={{ marginBottom: 10 }}
+          >
+            {isUploading ? 'Procesando...' : 'Tomar una Foto'}
+          </Button>
+
+          <Button
+            onPress={handlePickFile}
+            disabled={isUploading}
+            size="lg"
+          >
+            {isUploading ? 'Procesando...' : 'Elegir de la Galería'}
+          </Button>
+        </View>
+      )}
+
       {showResults && (
-        <Animated.View style={[styles.bottomPanel, { transform: [{ translateY: slideAnim }] }]}>
+        <Animated.View
+          style={[styles.bottomPanel, { transform: [{ translateY: slideAnim }] }]}
+        >
           <Card style={styles.panelCard}>
-            <Text style={styles.panelTitle}>Ingredientes detectados</Text>
+            <Text style={styles.panelTitle}>
+              Ingredientes detectados ({detectedIngredients.length})
+            </Text>
 
             <View style={styles.ingredientsList}>
               {detectedIngredients.map((ingredient, index) => (
-                <TouchableOpacity
-                  key={index}
-                  style={styles.ingredientBadge}
-                >
-                  <Badge variant="primary">
-                    {ingredient}
-                  </Badge>
-                </TouchableOpacity>
+                <Badge key={index} variant="primary">
+                  {ingredient.emoji} {capitalize(ingredient.name.split(' ')[0])} ({ingredient.quantity} {ingredient.unit})
+                </Badge>
               ))}
             </View>
 
             <View style={styles.buttonContainer}>
-              <Button
-                size="lg"
-                onPress={handleConfirm}
-                style={styles.confirmButton}
-              >
-                Confirmar ingredientes
+              <Button size="lg" onPress={handleConfirm} style={styles.confirmButton}>
+                Confirmar
               </Button>
+
+              <Text onPress={handleReset} style={styles.resetText}>
+                Realizar otro análisis
+              </Text>
             </View>
           </Card>
         </Animated.View>
+      )}
+
+      {/* 🔥 Overlay simplificado usando el estado del hook */}
+      {(isUploading || error) && (
+        <View style={styles.overlay}>
+          {isUploading && !error && (
+            <ActivityIndicator size="large" color="#fbbf24" />
+          )}
+
+          {error && (
+            <>
+              <Text style={styles.overlayText}>{error}</Text>
+              <Button onPress={handleReset}>
+                Reintentar
+              </Button>
+            </>
+          )}
+        </View>
       )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#000000',
-  },
+  container: { flex: 1, backgroundColor: '#000' },
   header: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    zIndex: 10,
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 20,
+    backgroundColor: 'rgba(0,0,0,0.3)',
   },
   backButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  flipButton: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(255,255,255,0.1)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -238,169 +394,100 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   permissionSubtext: {
-    color: 'rgba(255, 255, 255, 0.7)',
+    color: 'rgba(255,255,255,0.7)',
     fontSize: 16,
     textAlign: 'center',
     marginBottom: 24,
   },
-  permissionButton: {
-    paddingHorizontal: 32,
-  },
-  cameraContainer: {
+  permissionButton: { paddingHorizontal: 32 },
+  cameraContainer: { flex: 1, position: 'relative' },
+  camera: { flex: 1 },
+  imagePreviewContainer: {
     flex: 1,
+    backgroundColor: '#000',
   },
-  camera: {
-    flex: 1,
+  imagePreview: {
+    width: '100%',
+    height: '100%',
   },
-  overlay: {
-    flex: 1,
-    justifyContent: 'flex-start',
-    alignItems: 'center',
-    paddingTop: 120,
-  },
-  scanFrame: {
-    width: 320,
-    height: 320,
-    borderWidth: 2,
-    borderColor: 'rgba(255, 255, 255, 0.5)',
-    borderRadius: 12,
-    position: 'relative',
-  },
-  floatingBadge: {
+  labelContainer: {
     position: 'absolute',
-    zIndex: 1,
+    top: -28,
+    left: 0,
+    backgroundColor: '#fbbf24',
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 4,
   },
-  instructionsContainer: {
+  labelText: {
+    color: '#000',
+    fontSize: 12,
+    fontWeight: '600',
+  },
+  dropZone: {
     position: 'absolute',
-    bottom: 100,
+    top: 0,
     left: 0,
     right: 0,
-    alignItems: 'center',
-    paddingHorizontal: 20,
-  },
-  instructionsText: {
-    color: '#FFFFFF',
-    fontSize: 16,
-    textAlign: 'center',
-    marginBottom: 24,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 20,
-  },
-  scanButtonContainer: {
-    alignItems: 'center',
-  },
-  scanButton: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#D97706',
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.6)',
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#000',
-    shadowOpacity: 0.3,
-    shadowOffset: { width: 0, height: 4 },
-    shadowRadius: 8,
-    elevation: 8,
+    borderColor: 'rgba(255,255,255,0.3)',
+    borderWidth: 2,
+    borderStyle: 'dashed',
+    padding: 20,
   },
-  scanButtonActive: {
-    backgroundColor: '#F59E0B',
+  dropZoneActive: {
+    backgroundColor: 'rgba(255,255,255,0.1)',
+    borderColor: '#fbbf24',
   },
-  scanContent: {
-    alignItems: 'center',
-  },
-  scanningIndicator: {
-    alignItems: 'center',
-  },
-  scanButtonText: {
+  dropText: {
     color: '#FFFFFF',
-    fontSize: 14,
-    fontWeight: '600',
-    marginTop: 4,
+    fontSize: 16,
+    textAlign: 'center',
+    marginBottom: 20,
   },
-  bottomPanel: {
+  uploadButtonContainer: {
     position: 'absolute',
-    bottom: 0,
-    left: 0,
-    right: 0,
+    bottom: 100,
+    left: 20,
+    right: 20,
   },
+  bottomPanel: { position: 'absolute', bottom: 0, left: 0, right: 0 },
   panelCard: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
-    borderBottomLeftRadius: 0,
-    borderBottomRightRadius: 0,
-    paddingTop: 24,
-    paddingBottom: 40,
-    paddingHorizontal: 24,
+    padding: 24,
     minHeight: 280,
   },
-  panelTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
-    marginBottom: 16,
+  panelTitle: { fontSize: 18, fontWeight: '600', marginBottom: 16 },
+  ingredientsList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 },
+  buttonContainer: { gap: 12 },
+  confirmButton: { width: '100%' },
+  resetText: {
+    color: '#000000',
+    fontSize: 12,
+    textAlign: 'center',
+    marginTop: 8,
+    fontWeight: '500',
   },
-  ingredientsList: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    marginBottom: 24,
-  },
-  ingredientBadge: {
-    marginBottom: 4,
-  },
-  buttonContainer: {
-    gap: 12,
-  },
-  confirmButton: {
-    width: '100%',
-  },
-  addButton: {
-    width: '100%',
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  modalOverlay: {
-    flex: 1,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  overlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'rgba(0,0,0,0.7)',
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 20,
+    zIndex: 999,
   },
-  modalContent: {
-    backgroundColor: '#FFFFFF',
-    borderRadius: 12,
-    padding: 24,
-    width: '100%',
-    maxWidth: 400,
-  },
-  modalTitle: {
+  overlayText: {
+    color: '#fff',
     fontSize: 18,
-    fontWeight: '600',
-    color: '#1F2937',
     marginBottom: 16,
     textAlign: 'center',
-  },
-  modalInput: {
-    borderWidth: 1,
-    borderColor: '#E5E7EB',
-    borderRadius: 8,
-    paddingHorizontal: 12,
-    paddingVertical: 12,
-    fontSize: 16,
-    marginBottom: 20,
-  },
-  modalButtons: {
-    flexDirection: 'row',
-    gap: 12,
-  },
-  modalCancelButton: {
-    flex: 1,
-  },
-  modalAddButton: {
-    flex: 1,
   },
 });
 
