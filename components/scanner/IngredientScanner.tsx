@@ -1,13 +1,22 @@
-import { Feather } from '@expo/vector-icons';
-import { CameraType, CameraView, useCameraPermissions } from 'expo-camera';
-import * as ImagePicker from 'expo-image-picker';
-import React, { useRef, useState } from 'react';
-import { ActivityIndicator, Animated, Image, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
-import { useImageUpload } from '../../hooks/useImageUpload';
-import { DetectedIngredient } from '../../services/scanner/scannerService';
-import Badge from '../ui/Badge';
-import Button from '../ui/Button';
-import Card from '../ui/Card';
+import { Feather } from "@expo/vector-icons";
+import { CameraType, CameraView, useCameraPermissions } from "expo-camera";
+import * as ImagePicker from "expo-image-picker";
+import React, { useRef, useState } from "react";
+import {
+  ActivityIndicator,
+  Animated,
+  Image,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from "react-native";
+import { useImageUpload } from "../../hooks/useImageUpload";
+import { DetectedIngredient } from "../../services/scanner/scannerService";
+import Badge from "../ui/Badge";
+import Button from "../ui/Button";
+import Card from "../ui/Card";
 
 interface IngredientScannerProps {
   onBack?: () => void;
@@ -18,14 +27,22 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
   onBack,
   onConfirm,
 }) => {
-  const [facing, setFacing] = useState<CameraType>('back');
+  const [facing, setFacing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
-  const [detectedIngredients, setDetectedIngredients] = useState<DetectedIngredient[]>([]);
+  const [detectedIngredients, setDetectedIngredients] = useState<
+    DetectedIngredient[]
+  >([]);
   const [showResults, setShowResults] = useState(false);
   const [dragOver, setDragOver] = useState(false);
   const [uploadedImageUri, setUploadedImageUri] = useState<string | null>(null);
-  const [imageDimensions, setImageDimensions] = useState<{ width: number; height: number } | null>(null);
-  const [containerLayout, setContainerLayout] = useState<{ width: number; height: number } | null>(null);
+  const [imageDimensions, setImageDimensions] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
+  const [containerLayout, setContainerLayout] = useState<{
+    width: number;
+    height: number;
+  } | null>(null);
   const { upload, isUploading, error, setError } = useImageUpload();
 
   const slideAnim = useRef(new Animated.Value(300)).current;
@@ -37,7 +54,9 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
       <View style={styles.container}>
         <View style={styles.permissionContainer}>
           <Text style={styles.permissionText}>Camera access required</Text>
-          <Text style={styles.permissionSubtext}>To scan ingredients in real time</Text>
+          <Text style={styles.permissionSubtext}>
+            To scan ingredients in real time
+          </Text>
           <Button onPress={requestPermission} style={styles.permissionButton}>
             Allow camera access
           </Button>
@@ -48,10 +67,14 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
 
   const handleTakePhoto = async () => {
     const cameraPermission = await ImagePicker.requestCameraPermissionsAsync();
-    const mediaPermission = await ImagePicker.requestMediaLibraryPermissionsAsync();
+    const mediaPermission =
+      await ImagePicker.requestMediaLibraryPermissionsAsync();
 
-    if (cameraPermission.status !== 'granted' || mediaPermission.status !== 'granted') {
-      alert('Se requieren permisos de cámara y almacenamiento.');
+    if (
+      cameraPermission.status !== "granted" ||
+      mediaPermission.status !== "granted"
+    ) {
+      alert("Se requieren permisos de cámara y almacenamiento.");
       return;
     }
 
@@ -65,19 +88,31 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
       const asset = result.assets[0];
       await handleUpload(
         asset.uri,
-        asset.fileName || 'photo.jpg',
-        'image/jpeg'
+        asset.fileName || "photo.jpg",
+        "image/jpeg"
       );
     }
   };
 
-  const handleUpload = async (uri: string, fileName: string, mimeType: string) => {
+  const handleUpload = async (
+    uri: string,
+    fileName: string,
+    mimeType: string
+  ) => {
     try {
       setUploadedImageUri(uri);
       setError(null);
       const data = await upload(uri, fileName, mimeType);
 
       if (data.success) {
+        if (!data.inventory || data.inventory.length === 0) {
+          setError(
+            "No se detectaron ingredientes en la imagen. Intenta con otra foto más clara."
+          );
+          setUploadedImageUri(null); // Limpiar la imagen
+          return;
+        }
+
         setDetectedIngredients(data.inventory);
         setImageDimensions(data.image_dimensions || null);
         setShowResults(true);
@@ -88,18 +123,17 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
         }).start();
       }
     } catch (err: any) {
-      console.error('❌ Upload failed:', err);
-      // El error ya está manejado por el hook
+      console.error("❌ Upload failed:", err);
     } finally {
       setDragOver(false);
     }
   };
 
   const handlePickFile = async () => {
-    if (Platform.OS === 'web') {
-      const input = document.createElement('input');
-      input.type = 'file';
-      input.accept = 'image/*';
+    if (Platform.OS === "web") {
+      const input = document.createElement("input");
+      input.type = "file";
+      input.accept = "image/*";
       input.onchange = async (e: any) => {
         const file = e.target.files[0];
         if (file) {
@@ -119,8 +153,8 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
         const asset = result.assets[0];
         await handleUpload(
           asset.uri,
-          asset.fileName || 'upload.jpg',
-          'image/jpeg'
+          asset.fileName || "upload.jpg",
+          "image/jpeg"
         );
       }
     }
@@ -137,7 +171,7 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
     e.preventDefault();
     setDragOver(false);
     const file = e.dataTransfer.files[0];
-    if (file && file.type.startsWith('image/')) {
+    if (file && file.type.startsWith("image/")) {
       const uri = URL.createObjectURL(file);
       await handleUpload(uri, file.name, file.type);
     }
@@ -161,7 +195,12 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
 
   const capitalize = (s: string) => s.charAt(0).toUpperCase() + s.slice(1);
 
-  const getBoundingBoxStyle = (bbox: { x: number; y: number; width: number; height: number }) => {
+  const getBoundingBoxStyle = (bbox: {
+    x: number;
+    y: number;
+    width: number;
+    height: number;
+  }) => {
     if (!containerLayout || !imageDimensions) return {};
 
     const scaleX = containerLayout.width / imageDimensions.width;
@@ -180,33 +219,33 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
     const height = bbox.height * scaledHeight;
 
     return {
-      position: 'absolute' as const,
+      position: "absolute" as const,
       left,
       top,
       width,
       height,
       borderWidth: 3,
-      borderColor: '#fbbf24',
+      borderColor: "#fbbf24",
       borderRadius: 8,
-      backgroundColor: 'rgba(251, 191, 36, 0.1)',
+      backgroundColor: "rgba(251, 191, 36, 0.1)",
     };
   };
 
   const translateYImage = slideAnim.interpolate({
     inputRange: [0, 300],
     outputRange: [-150, 0],
-    extrapolate: 'clamp',
+    extrapolate: "clamp",
   });
 
   return (
     <View
       style={styles.container}
-      {...(Platform.OS === 'web'
+      {...(Platform.OS === "web"
         ? {
-          onDragOver: handleDragOver,
-          onDragLeave: handleDragLeave,
-          onDrop: handleDrop,
-        }
+            onDragOver: handleDragOver,
+            onDragLeave: handleDragLeave,
+            onDrop: handleDrop,
+          }
         : {})}
     >
       <View style={styles.header}>
@@ -244,14 +283,15 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
                   key={index}
                   style={{
                     ...getBoundingBoxStyle(ingredient.bounding_box),
-                    display: 'flex',
-                    justifyContent: 'center',
-                    alignItems: 'center',
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
                   }}
                 >
                   <View style={styles.labelContainer}>
                     <Text style={styles.labelText}>
-                      {ingredient.emoji} {capitalize(ingredient.name.split(' ')[0])}
+                      {ingredient.emoji}{" "}
+                      {capitalize(ingredient.name.split(" ")[0])}
                     </Text>
                   </View>
                 </View>
@@ -260,17 +300,19 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
           </Animated.View>
         ) : (
           <CameraView style={styles.camera} facing={facing}>
-            {Platform.OS === 'web' && (
-              <View style={[styles.dropZone, dragOver && styles.dropZoneActive]}>
+            {Platform.OS === "web" && (
+              <View
+                style={[styles.dropZone, dragOver && styles.dropZoneActive]}
+              >
                 <Text style={styles.dropText}>
                   {isUploading
-                    ? 'Uploading...'
+                    ? "Uploading..."
                     : dragOver
-                      ? 'Drop your image here!'
-                      : 'Drag & drop an image or click below to upload'}
+                    ? "Drop your image here!"
+                    : "Drag & drop an image or click below to upload"}
                 </Text>
                 <Button onPress={handlePickFile} disabled={isUploading}>
-                  {isUploading ? 'Processing...' : 'Upload Image'}
+                  {isUploading ? "Processing..." : "Upload Image"}
                 </Button>
               </View>
             )}
@@ -278,7 +320,7 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
         )}
       </View>
 
-      {!uploadedImageUri && Platform.OS !== 'web' && (
+      {!uploadedImageUri && Platform.OS !== "web" && (
         <View style={styles.uploadButtonContainer}>
           <Button
             onPress={handleTakePhoto}
@@ -286,22 +328,21 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
             size="lg"
             style={{ marginBottom: 10 }}
           >
-            {isUploading ? 'Procesando...' : 'Tomar una Foto'}
+            {isUploading ? "Procesando..." : "Tomar una Foto"}
           </Button>
 
-          <Button
-            onPress={handlePickFile}
-            disabled={isUploading}
-            size="lg"
-          >
-            {isUploading ? 'Procesando...' : 'Elegir de la Galería'}
+          <Button onPress={handlePickFile} disabled={isUploading} size="lg">
+            {isUploading ? "Procesando..." : "Elegir de la Galería"}
           </Button>
         </View>
       )}
 
       {showResults && (
         <Animated.View
-          style={[styles.bottomPanel, { transform: [{ translateY: slideAnim }] }]}
+          style={[
+            styles.bottomPanel,
+            { transform: [{ translateY: slideAnim }] },
+          ]}
         >
           <Card style={styles.panelCard}>
             <Text style={styles.panelTitle}>
@@ -311,13 +352,18 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
             <View style={styles.ingredientsList}>
               {detectedIngredients.map((ingredient, index) => (
                 <Badge key={index} variant="primary">
-                  {ingredient.emoji} {capitalize(ingredient.name.split(' ')[0])} ({ingredient.quantity} {ingredient.unit})
+                  {ingredient.emoji} {capitalize(ingredient.name.split(" ")[0])}{" "}
+                  ({ingredient.quantity} {ingredient.unit})
                 </Badge>
               ))}
             </View>
 
             <View style={styles.buttonContainer}>
-              <Button size="lg" onPress={handleConfirm} style={styles.confirmButton}>
+              <Button
+                size="lg"
+                onPress={handleConfirm}
+                style={styles.confirmButton}
+              >
                 Confirmar
               </Button>
 
@@ -331,7 +377,7 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
 
       {/* 🔥 Overlay simplificado usando el estado del hook */}
       {(isUploading || error) && (
-        <View style={styles.overlay}>
+        <View style={error ? styles.overlayError : styles.overlay}>
           {isUploading && !error && (
             <ActivityIndicator size="large" color="#fbbf24" />
           )}
@@ -339,9 +385,7 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
           {error && (
             <>
               <Text style={styles.overlayText}>{error}</Text>
-              <Button onPress={handleReset}>
-                Reintentar
-              </Button>
+              <Button onPress={handleReset}>Reintentar</Button>
             </>
           )}
         </View>
@@ -351,143 +395,159 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
 };
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#000' },
+  container: { flex: 1, backgroundColor: "#000" },
   header: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     zIndex: 10,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
     paddingTop: 50,
     paddingHorizontal: 20,
     paddingBottom: 20,
-    backgroundColor: 'rgba(0,0,0,0.3)',
+    backgroundColor: "rgba(0,0,0,0.3)",
   },
   backButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(255,255,255,0.1)",
+    justifyContent: "center",
+    alignItems: "center",
   },
   headerTitle: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 18,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
   },
   permissionContainer: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     paddingHorizontal: 40,
   },
   permissionText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 20,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: "600",
+    textAlign: "center",
     marginBottom: 8,
   },
   permissionSubtext: {
-    color: 'rgba(255,255,255,0.7)',
+    color: "rgba(255,255,255,0.7)",
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 24,
   },
   permissionButton: { paddingHorizontal: 32 },
-  cameraContainer: { flex: 1, position: 'relative' },
+  cameraContainer: { flex: 1, position: "relative" },
   camera: { flex: 1 },
   imagePreviewContainer: {
     flex: 1,
-    backgroundColor: '#000',
+    backgroundColor: "#000",
   },
   imagePreview: {
-    width: '100%',
-    height: '100%',
+    width: "100%",
+    height: "100%",
   },
   labelContainer: {
-    position: 'absolute',
+    position: "absolute",
     top: -28,
     left: 0,
-    backgroundColor: '#fbbf24',
+    backgroundColor: "#fbbf24",
     paddingHorizontal: 8,
     paddingVertical: 4,
     borderRadius: 4,
   },
   labelText: {
-    color: '#000',
+    color: "#000",
     fontSize: 12,
-    fontWeight: '600',
+    fontWeight: "600",
   },
   dropZone: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.6)',
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderColor: 'rgba(255,255,255,0.3)',
+    backgroundColor: "rgba(0,0,0,0.6)",
+    justifyContent: "center",
+    alignItems: "center",
+    borderColor: "rgba(255,255,255,0.3)",
     borderWidth: 2,
-    borderStyle: 'dashed',
+    borderStyle: "dashed",
     padding: 20,
   },
   dropZoneActive: {
-    backgroundColor: 'rgba(255,255,255,0.1)',
-    borderColor: '#fbbf24',
+    backgroundColor: "rgba(255,255,255,0.1)",
+    borderColor: "#fbbf24",
   },
   dropText: {
-    color: '#FFFFFF',
+    color: "#FFFFFF",
     fontSize: 16,
-    textAlign: 'center',
+    textAlign: "center",
     marginBottom: 20,
   },
   uploadButtonContainer: {
-    position: 'absolute',
+    position: "absolute",
     bottom: 100,
     left: 20,
     right: 20,
   },
-  bottomPanel: { position: 'absolute', bottom: 0, left: 0, right: 0 },
+  bottomPanel: { position: "absolute", bottom: 0, left: 0, right: 0 },
   panelCard: {
     borderTopLeftRadius: 24,
     borderTopRightRadius: 24,
     padding: 24,
     minHeight: 280,
   },
-  panelTitle: { fontSize: 18, fontWeight: '600', marginBottom: 16 },
-  ingredientsList: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginBottom: 24 },
+  panelTitle: { fontSize: 18, fontWeight: "600", marginBottom: 16 },
+  ingredientsList: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: 8,
+    marginBottom: 24,
+  },
   buttonContainer: { gap: 12 },
-  confirmButton: { width: '100%' },
+  confirmButton: { width: "100%" },
   resetText: {
-    color: '#000000',
+    color: "#000000",
     fontSize: 12,
-    textAlign: 'center',
+    textAlign: "center",
     marginTop: 8,
-    fontWeight: '500',
+    fontWeight: "500",
   },
   overlay: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     left: 0,
     right: 0,
     bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.7)',
-    justifyContent: 'center',
-    alignItems: 'center',
+    backgroundColor: "rgba(0,0,0,0.7)",
+    justifyContent: "center",
+    alignItems: "center",
+    zIndex: 999,
+  },
+  overlayError: {
+    position: "absolute",
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: "rgba(0,0,0,0.99)",
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 999,
   },
   overlayText: {
-    color: '#fff',
+    color: "#fff",
     fontSize: 18,
     marginBottom: 16,
-    textAlign: 'center',
+    textAlign: "center",
   },
 });
 
