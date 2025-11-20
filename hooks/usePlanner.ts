@@ -7,7 +7,11 @@ import {
   WeeklyAPIResponse,
 } from "../types/planner";
 import { formatDate } from "../utils/dateUtils";
-import { obtenerPlanificacionSemanal } from "../services/api/plannerService";
+import { 
+  obtenerPlanificacionSemanal, 
+  generarSugerenciasSemanalIA 
+} from "../services/api/plannerService";
+import type { AISuggestionsResponse } from "../types/planner";
 
 const formatDateForAPI = (date: Date): string => {
   return date.toISOString().split("T")[0];
@@ -156,7 +160,19 @@ export const usePlanner = (userId: string) => {
             setError(null);
             loadingRef.current = true;
 
-            const apiResponse = await obtenerPlanificacionSemanal(fechaAPI);
+            let apiResponse;
+            try {
+              apiResponse = await obtenerPlanificacionSemanal(fechaAPI);
+            } catch (planError) {
+              console.log("📅 No hay planificación, intentando generar sugerencias IA...");
+              try {
+                await generarSugerenciasSemanalIA();
+                apiResponse = await obtenerPlanificacionSemanal(fechaAPI);
+              } catch (aiError) {
+                console.error("Error generando sugerencias IA:", aiError);
+                throw planError;
+              }
+            }
 
             if (currentRequestRef.current !== requestId) {
               loadingRef.current = false;
@@ -210,7 +226,7 @@ export const usePlanner = (userId: string) => {
             setIsLoading(false);
             resolve();
           }
-        }, 300); // Debounce de 300ms
+        }, 300);
       });
     },
     [userId, selectedDate],

@@ -1,4 +1,5 @@
 import { getAuthHeaders } from "./authService";
+import type { AISuggestionsResponse } from "../../types/planner";
 
 const API_BASE_URL = process.env.EXPO_PUBLIC_API_URL;
 
@@ -51,6 +52,32 @@ export const obtenerPlanificacionSemanal = async (
 
     const planificacion: WeeklyPlanResponse = await response.json();
     return planificacion;
+  } catch (error) {
+    throw error;
+  }
+};
+
+export const generarSugerenciasSemanalIA = async (): Promise<AISuggestionsResponse> => {
+  try {
+    const headers = await getAuthHeaders();
+
+    const response = await fetch(
+      `${API_BASE_URL}/v1/planificador/semana/sugerencias`,
+      {
+        method: "POST",
+        headers,
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json();
+      throw new Error(
+        errorData.error || "Error al generar sugerencias semanales"
+      );
+    }
+
+    const sugerencias: AISuggestionsResponse = await response.json();
+    return sugerencias;
   } catch (error) {
     throw error;
   }

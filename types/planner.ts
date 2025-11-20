@@ -48,3 +48,16 @@ export interface PlannerStats {
   mostUsedDifficulty: string;
 }
 
+export interface DaySuggestion {
+  almuerzo: number | null;
+  cena: number | null;
+  desayuno: number | null;
+}
+
+export interface AISuggestionsResponse {
+  semana: string;
+  sugerencias: {
+    [date: string]: DaySuggestion;
+  };
+}
+
