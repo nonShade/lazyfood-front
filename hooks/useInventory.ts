@@ -1,51 +1,95 @@
-import { useState } from 'react';
+import { useState, useEffect } from "react";
+import {
+  obtenerInventario,
+  InventoryIngredient,
+} from "../services/api/inventoryService";
 
 interface Ingredient {
-    id: string;
-    name: string;
-    quantity: number;
-    category: string;
-    icon: string;
+  id: string;
+  name: string;
+  quantity: number;
+  category: string;
+  icon: string;
 }
 
-export const useInventory = (userId: string) => {
-    const [ingredients, setIngredients] = useState<Ingredient[]>([
-        { id: '1', name: 'Tomate', quantity: 5, category: 'Frutas y Verduras', icon: '🍅' },
-        { id: '2', name: 'Ajo', quantity: 1, category: 'Frutas y Verduras', icon: '🧄' },
-        { id: '3', name: 'Cebolla', quantity: 2, category: 'Frutas y Verduras', icon: '🧅' },
-    ]);
+export const useInventory = () => {
+  const [ingredients, setIngredients] = useState<Ingredient[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
-    const addIngredients = (newIngredients: Ingredient[]) => {
-        setIngredients((prev) => {
-            const updated = [...prev];
+  // Función para convertir de la respuesta API al formato esperado por los componentes
+  const transformApiIngredient = (
+    apiIngredient: InventoryIngredient,
+  ): Ingredient => ({
+    id: apiIngredient.id.toString(),
+    name: apiIngredient.ingrediente.nombre,
+    quantity: apiIngredient.cantidad,
+    category: apiIngredient.ingrediente.categoria || "Sin categoría",
+    icon: apiIngredient.ingrediente.emoji || "🥫",
+  });
 
-            newIngredients.forEach((newIng) => {
-                const existingIndex = updated.findIndex((ing) => ing.id === newIng.id);
-                if (existingIndex >= 0) {
-                    updated[existingIndex].quantity += newIng.quantity;
-                } else {
-                    updated.push(newIng);
-                }
-            });
+  const loadInventory = async () => {
+    try {
+      setIsLoading(true);
+      setError(null);
+      const response = await obtenerInventario();
+      const transformedIngredients = response.inventario.map(
+        transformApiIngredient,
+      );
+      setIngredients(transformedIngredients);
+    } catch (err: any) {
+      console.error("Error cargando inventario:", err);
+      setError(err.message || "Error al cargar el inventario");
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
-            return updated;
-        });
-    };
+  useEffect(() => {
+    loadInventory();
+  }, []);
 
-    const updateIngredient = (updatedIngredient: Ingredient) => {
-        setIngredients((prev) =>
-            prev.map((ing) => (ing.id === updatedIngredient.id ? updatedIngredient : ing))
-        );
-    };
+  const refreshInventory = () => {
+    loadInventory();
+  };
 
-    const deleteIngredient = (id: string) => {
-        setIngredients((prev) => prev.filter((ing) => ing.id !== id));
-    };
+  const addIngredients = (newIngredients: Ingredient[]) => {
+    setIngredients((prev) => {
+      const updated = [...prev];
 
-    return {
-        ingredients,
-        addIngredients,
-        updateIngredient,
-        deleteIngredient,
-    };
+      newIngredients.forEach((newIng) => {
+        const existingIndex = updated.findIndex((ing) => ing.id === newIng.id);
+        if (existingIndex >= 0) {
+          updated[existingIndex].quantity += newIng.quantity;
+        } else {
+          updated.push(newIng);
+        }
+      });
+
+      return updated;
+    });
+  };
+
+  const updateIngredient = (updatedIngredient: Ingredient) => {
+    setIngredients((prev) =>
+      prev.map((ing) =>
+        ing.id === updatedIngredient.id ? updatedIngredient : ing,
+      ),
+    );
+  };
+
+  const deleteIngredient = (id: string) => {
+    setIngredients((prev) => prev.filter((ing) => ing.id !== id));
+  };
+
+  return {
+    ingredients,
+    isLoading,
+    error,
+    refreshInventory,
+    addIngredients,
+    updateIngredient,
+    deleteIngredient,
+  };
 };
+
