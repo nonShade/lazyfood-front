@@ -9,13 +9,38 @@ import {
   TextInput,
   TouchableOpacity,
   View,
+  Alert,
 } from 'react-native';
 import { Colors } from '../../constants/theme';
+import { useAuth } from '../../hooks/useAuth';
 
 export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const router = useRouter();
+  const { login, loading } = useAuth();
+
+  const handleLogin = async () => {
+    if (!email.trim() || !password.trim()) {
+      Alert.alert('Error', 'Por favor completa todos los campos');
+      return;
+    }
+
+    try {
+      const response = await login({
+        email: email.trim(),
+        password: password,
+      });
+
+      router.replace('/home');
+
+    } catch (error: any) {
+      Alert.alert(
+        'Error',
+        error.message || 'Error al iniciar sesión. Verifica tus credenciales.'
+      );
+    }
+  };
 
   return (
     <KeyboardAvoidingView
@@ -52,8 +77,15 @@ export default function Login() {
             placeholderTextColor="#9CA3AF"
           />
 
-          <TouchableOpacity style={styles.primaryButton} activeOpacity={0.85} onPress={() => router.push('../home')}>
-            <Text style={styles.primaryButtonText}>Comenzar</Text>
+          <TouchableOpacity
+            style={[styles.primaryButton, loading && styles.primaryButtonDisabled]}
+            activeOpacity={0.85}
+            onPress={handleLogin}
+            disabled={loading}
+          >
+            <Text style={styles.primaryButtonText}>
+              {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+            </Text>
           </TouchableOpacity>
 
           <View style={styles.linksRow}>
@@ -145,6 +177,11 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 2 },
     shadowRadius: 4,
     elevation: 2,
+  },
+  primaryButtonDisabled: {
+    backgroundColor: '#9CA3AF',
+    elevation: 0,
+    shadowOpacity: 0,
   },
   primaryButtonText: {
     color: '#FFF',
