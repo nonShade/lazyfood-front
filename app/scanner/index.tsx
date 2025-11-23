@@ -25,21 +25,15 @@ export default function ScannerScreen() {
       // Actualizar inventario con los ingredientes detectados
       const result = await actualizarInventario(ingredients);
 
-      Alert.alert(
-        'Inventario actualizado',
-        `${result.detalles.length} ingredientes agregados exitosamente.`,
-        [
-          {
-            text: 'Ver inventario',
-            onPress: () => {
-              router.push({
-                pathname: '/inventory',
-                params: { refresh: 'true' }
-              });
-            },
-          },
-        ]
-      );
+      setTimeout(() => {
+        router.push({
+          pathname: '/inventory',
+          params: {
+            refresh: 'true',
+            scannedUpdate: JSON.stringify(result.detalles)
+          }
+        });
+      }, 100);
 
     } catch (error: any) {
       console.error('Error actualizando inventario:', error);

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   obtenerInventario,
   InventoryIngredient,
@@ -49,9 +49,9 @@ export const useInventory = () => {
     loadInventory();
   }, []);
 
-  const refreshInventory = () => {
-    loadInventory();
-  };
+  const refreshInventory = useCallback(() => {
+    return loadInventory();
+  }, []);
 
   const addIngredients = (newIngredients: Ingredient[]) => {
     setIngredients((prev) => {
@@ -92,4 +92,3 @@ export const useInventory = () => {
     deleteIngredient,
   };
 };
-
