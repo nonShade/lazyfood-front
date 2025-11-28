@@ -1,7 +1,8 @@
-import { useState, useEffect } from "react";
+import { useCallback, useEffect, useState } from "react";
 import {
-  obtenerInventario,
+  actualizarInventario,
   InventoryIngredient,
+  obtenerInventario,
 } from "../services/api/inventoryService";
 
 interface Ingredient {
@@ -49,25 +50,31 @@ export const useInventory = () => {
     loadInventory();
   }, []);
 
-  const refreshInventory = () => {
-    loadInventory();
-  };
+  const refreshInventory = useCallback(() => {
+    return loadInventory();
+  }, []);
 
-  const addIngredients = (newIngredients: Ingredient[]) => {
-    setIngredients((prev) => {
-      const updated = [...prev];
+  const addIngredients = async (newIngredients: Ingredient[]) => {
+    try {
+      setIsLoading(true);
+      const apiIngredients = newIngredients.map(ing => ({
+        id: ing.id || ing.name,
+        name: ing.name,
+        quantity: ing.quantity,
+        unit: 'unidades',
+        confidence: 1.0,
+        emoji: ing.icon,
+        category: ing.category,
+        state: 'good'
+      }));
 
-      newIngredients.forEach((newIng) => {
-        const existingIndex = updated.findIndex((ing) => ing.id === newIng.id);
-        if (existingIndex >= 0) {
-          updated[existingIndex].quantity += newIng.quantity;
-        } else {
-          updated.push(newIng);
-        }
-      });
-
-      return updated;
-    });
+      await actualizarInventario(apiIngredients);
+      await loadInventory();
+    } catch (err: any) {
+      console.error("Error adding ingredients:", err);
+      setError(err.message || "Error al agregar ingredientes");
+      setIsLoading(false);
+    }
   };
 
   const updateIngredient = (updatedIngredient: Ingredient) => {
@@ -92,4 +99,3 @@ export const useInventory = () => {
     deleteIngredient,
   };
 };
-

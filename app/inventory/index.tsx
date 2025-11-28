@@ -11,7 +11,7 @@ const Inventory = () => {
   const [editModalVisible, setEditModalVisible] = useState(false);
   const [selectedIngredient, setSelectedIngredient] = useState(null);
 
-  const { refresh } = useLocalSearchParams();
+  const { refresh, scannedUpdate } = useLocalSearchParams();
 
   const {
     ingredients,
@@ -27,7 +27,18 @@ const Inventory = () => {
     if (refresh === 'true') {
       refreshInventory();
     }
-  }, [refresh]);
+
+    if (scannedUpdate && typeof scannedUpdate === 'string') {
+      try {
+        const scannedDetails = JSON.parse(scannedUpdate);
+        setTimeout(() => {
+          refreshInventory();
+        }, 500);
+      } catch (error) {
+        console.error('Error parseando ingredientes escaneados:', error);
+      }
+    }
+  }, [refresh, scannedUpdate, refreshInventory]);
 
   const handleAddIngredients = (newIngredients: any) => {
     addIngredients(newIngredients);
