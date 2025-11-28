@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -12,8 +13,7 @@ import {
   View,
 } from 'react-native';
 import { Colors } from '../../constants/theme';
-import { Ionicons } from '@expo/vector-icons';
-import { registrarUsuario } from '../../services/api/authService';
+import { login, registrarUsuario } from '../../services/api/authService';
 
 interface FormErrors {
   fullName?: string;
@@ -93,6 +93,11 @@ export default function Register() {
       };
 
       await registrarUsuario(registrationData);
+      await login({
+        email,
+        password,
+      });
+
       router.push('/onboarding');
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Hubo un problema al crear tu cuenta. Intenta nuevamente.');
