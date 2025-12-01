@@ -7,6 +7,7 @@ interface MealPlan {
   receta_id?: number;
   receta_nombre?: string;
   es_sugerida?: boolean;
+  emoji?: string;
 }
 
 interface DayMenu {
@@ -30,35 +31,30 @@ interface WeeklyPlanResponse {
 export const obtenerPlanificacionSemanal = async (
   fecha?: string,
 ): Promise<WeeklyPlanResponse> => {
-  try {
-    const headers = await getAuthHeaders();
+  const headers = await getAuthHeaders();
 
-    let url = `${API_BASE_URL}/v1/planificador/semana`;
-    if (fecha) {
-      url += `?fecha=${encodeURIComponent(fecha)}`;
-    }
-
-    const response = await fetch(url, {
-      method: "GET",
-      headers,
-    });
-
-    if (!response.ok) {
-      const errorData = await response.json();
-      throw new Error(
-        errorData.message || "Error al obtener la planificación semanal",
-      );
-    }
-
-    const planificacion: WeeklyPlanResponse = await response.json();
-    return planificacion;
-  } catch (error) {
-    throw error;
+  let url = `${API_BASE_URL}/v1/planificador/semana`;
+  if (fecha) {
+    url += `?fecha=${encodeURIComponent(fecha)}`;
   }
+
+  const response = await fetch(url, {
+    method: "GET",
+    headers,
+  });
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(
+      errorData.message || "Error al obtener la planificación semanal",
+    );
+  }
+
+  return await response.json();
 };
 
-export const generarSugerenciasSemanalIA = async (): Promise<AISuggestionsResponse> => {
-  try {
+export const generarSugerenciasSemanalIA =
+  async (): Promise<AISuggestionsResponse> => {
     const headers = await getAuthHeaders();
 
     const response = await fetch(
@@ -66,22 +62,73 @@ export const generarSugerenciasSemanalIA = async (): Promise<AISuggestionsRespon
       {
         method: "POST",
         headers,
-      }
+      },
     );
 
     if (!response.ok) {
       const errorData = await response.json();
       throw new Error(
-        errorData.error || "Error al generar sugerencias semanales"
+        errorData.error || "Error al generar sugerencias semanales",
       );
     }
 
-    const sugerencias: AISuggestionsResponse = await response.json();
-    return sugerencias;
-  } catch (error) {
-    throw error;
+    return await response.json();
+  };
+
+export const generarRecomendacionesIA = async (
+  cantidad: number = 10,
+): Promise<any[]> => {
+  const headers = await getAuthHeaders();
+
+  const response = await fetch(
+    `${API_BASE_URL}/v1/recetas/sugerencias?cantidad=${cantidad}`,
+    {
+      method: "GET",
+      headers,
+    },
+  );
+
+  if (!response.ok) {
+    const errorData = await response.json();
+    throw new Error(
+      errorData.error || "Error al obtener recomendaciones de recetas",
+    );
   }
+
+  return await response.json();
 };
+
+const needsBaseRecommendations = (error: Error): boolean => {
+  return Boolean(
+    error.message &&
+      (error.message.includes("Genera recomendaciones antes") ||
+        error.message.includes("No hay recetas sugeridas")),
+  );
+};
+
+export const generarSugerenciasCompletas =
+  async (): Promise<AISuggestionsResponse> => {
+    try {
+      return await generarSugerenciasSemanalIA();
+    } catch (error: any) {
+      if (needsBaseRecommendations(error)) {
+        try {
+          await generarRecomendacionesIA();
+          return await generarSugerenciasSemanalIA();
+        } catch (recomendacionesError: any) {
+          console.error(
+            "Error en el flujo completo de recomendaciones:",
+            recomendacionesError.message,
+          );
+          throw new Error(
+            `Error generando recomendaciones: ${recomendacionesError.message}`,
+          );
+        }
+      } else {
+        throw error;
+      }
+    }
+  };
 
 export type { WeeklyPlanResponse, DayMenu, MealPlan };
 

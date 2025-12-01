@@ -51,6 +51,22 @@ const Calendar: React.FC<CalendarProps> = ({
     return Boolean(dayPlan?.breakfast || dayPlan?.lunch || dayPlan?.dinner);
   };
 
+  const getEmojisForDate = (day: number): string[] => {
+    if (!weekPlan?.days) return [];
+
+    const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    const dateString = date.toISOString().split('T')[0];
+
+    const dayPlan = weekPlan.days.find((d: DayPlan) => d.date === dateString);
+    const emojis: string[] = [];
+
+    if (dayPlan?.breakfast?.icon) emojis.push(dayPlan.breakfast.icon);
+    if (dayPlan?.lunch?.icon) emojis.push(dayPlan.lunch.icon);
+    if (dayPlan?.dinner?.icon) emojis.push(dayPlan.dinner.icon);
+
+    return emojis.slice(0, 3); // Máximo 3 emojis
+  };
+
   const isDateSelected = (day: number): boolean => {
     return selectedDate.getDate() === day &&
       selectedDate.getMonth() === currentMonth.getMonth() &&
@@ -70,6 +86,7 @@ const Calendar: React.FC<CalendarProps> = ({
       const hasRecipes = hasRecipesForDate(day);
       const isSelected = isDateSelected(day);
       const isSuggested = isSuggestedDay(day);
+      const emojis = getEmojisForDate(day);
 
       days.push(
         <TouchableOpacity
@@ -97,6 +114,14 @@ const Calendar: React.FC<CalendarProps> = ({
             >
               {day}
             </Text>
+            {emojis.length > 0 && (
+              <View style={styles.emojisContainer}>
+                <Text style={styles.emojisText}>
+                  {emojis.slice(0, 2).join('')}
+                  {emojis.length > 2 ? '...' : ''}
+                </Text>
+              </View>
+            )}
           </View>
         </TouchableOpacity>
       );
@@ -257,6 +282,15 @@ const styles = StyleSheet.create({
   legendText: {
     fontSize: 12,
     color: '#6B7280',
+  },
+  emojisContainer: {
+    marginTop: 2,
+    minHeight: 12,
+  },
+  emojisText: {
+    fontSize: 8,
+    textAlign: 'center',
+    lineHeight: 10,
   },
 });
 
