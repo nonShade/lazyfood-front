@@ -10,6 +10,13 @@ export interface Recipe {
   instructions?: string[];
 }
 
+export interface PlannedMeal {
+  receta_id?: number;
+  receta_nombre?: string;
+  es_sugerida?: boolean;
+  emoji?: string;
+}
+
 export interface DayPlan {
   date: string;
   breakfast?: Recipe;
@@ -24,9 +31,34 @@ export interface WeekPlan {
   days: DayPlan[];
 }
 
+export interface WeeklyAPIResponse {
+  semana: string;
+  menus: {
+    [date: string]: {
+      desayuno?: PlannedMeal;
+      almuerzo?: PlannedMeal;
+      cena?: PlannedMeal;
+    };
+  };
+}
+
 export interface PlannerStats {
   totalCookingDays: number;
   totalRecipes: number;
   averageCaloriesPerDay: number;
   mostUsedDifficulty: string;
 }
+
+export interface DaySuggestion {
+  almuerzo: number | null;
+  cena: number | null;
+  desayuno: number | null;
+}
+
+export interface AISuggestionsResponse {
+  semana: string;
+  sugerencias: {
+    [date: string]: DaySuggestion;
+  };
+}
+

@@ -6,6 +6,8 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useEffect } from 'react';
+import { useLocalSearchParams } from 'expo-router';
 import { usePlanner } from '../../hooks/usePlanner';
 import Calendar from '../../components/planner/Calendar';
 import DayRecipes from '../../components/planner/DayRecipes';
@@ -13,6 +15,7 @@ import StatsCard from '../../components/planner/StatsCard';
 
 const PlannerHome = () => {
   const userId = 'user123';
+  const params = useLocalSearchParams();
 
   const {
     weekPlan,
@@ -24,7 +27,14 @@ const PlannerHome = () => {
     setCurrentMonth,
     getStatsForMonth,
     getDayPlan,
+    refreshWeekPlan,
   } = usePlanner(userId);
+
+  useEffect(() => {
+    if (params.plannerRefresh === 'true') {
+      refreshWeekPlan();
+    }
+  }, [params.plannerRefresh, refreshWeekPlan]);
 
   const handleMonthChange = (direction: number) => {
     const newMonth = new Date(currentMonth);
@@ -34,6 +44,7 @@ const PlannerHome = () => {
 
   const dayPlan = getDayPlan(selectedDate);
   const stats = getStatsForMonth();
+
 
   if (error) {
     return (

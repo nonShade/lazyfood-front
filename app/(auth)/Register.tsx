@@ -13,10 +13,12 @@ import {
 } from 'react-native';
 import { Colors } from '../../constants/theme';
 import { Ionicons } from '@expo/vector-icons';
+import { registrarUsuario } from '../../services/api/authService';
 
 interface FormErrors {
   fullName?: string;
   email?: string;
+  country?: string;
   password?: string;
   terms?: string;
 }
@@ -24,6 +26,7 @@ interface FormErrors {
 export default function Register() {
   const [fullName, setFullName] = useState('');
   const [email, setEmail] = useState('');
+  const [country, setCountry] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [termsAccepted, setTermsAccepted] = useState(false);
@@ -58,6 +61,10 @@ export default function Register() {
       newErrors.email = 'Formato de correo electrónico inválido';
     }
 
+    if (!country.trim()) {
+      newErrors.country = 'El país es requerido';
+    }
+
     const passwordValidation = validatePassword(password);
     if (!password) {
       newErrors.password = 'La contraseña es requerida';
@@ -78,10 +85,17 @@ export default function Register() {
 
     setLoading(true);
     try {
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      const registrationData = {
+        email,
+        nombre: fullName,
+        pais: country,
+        password,
+      };
+
+      await registrarUsuario(registrationData);
       router.push('/onboarding');
-    } catch {
-      Alert.alert('Error', 'Hubo un problema al crear tu cuenta. Intenta nuevamente.');
+    } catch (error) {
+      Alert.alert('Error', error instanceof Error ? error.message : 'Hubo un problema al crear tu cuenta. Intenta nuevamente.');
     } finally {
       setLoading(false);
     }
@@ -150,6 +164,18 @@ export default function Register() {
             />
           </View>
           {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
+
+          <View style={styles.inputContainer}>
+            <Ionicons name="location-outline" size={20} color="#9CA3AF" style={styles.inputIcon} />
+            <TextInput
+              value={country}
+              onChangeText={setCountry}
+              placeholder="País"
+              style={styles.input}
+              placeholderTextColor="#9CA3AF"
+            />
+          </View>
+          {errors.country && <Text style={styles.errorText}>{errors.country}</Text>}
 
           <View style={styles.inputContainer}>
             <Ionicons name="lock-closed-outline" size={20} color="#9CA3AF" style={styles.inputIcon} />
