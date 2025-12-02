@@ -1,8 +1,9 @@
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
-import { ScrollView, StyleSheet, Text, TouchableOpacity, View, ActivityIndicator } from 'react-native';
+import { useEffect, useState } from 'react';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRecipes } from '../../hooks/useRecipes';
-import { useEffect } from 'react';
+import { obtenerInventario, type InventoryIngredient } from '../../services/api/inventoryService';
 
 const RecipeDetail = () => {
   const router = useRouter();
@@ -10,12 +11,38 @@ const RecipeDetail = () => {
   const id = params?.id ? Number(params.id) : null;
 
   const { currentRecipe, loadRecipeDetail, isLoading, error } = useRecipes();
+  const [inventario, setInventario] = useState<InventoryIngredient[]>([]);
+  const [loadingInventario, setLoadingInventario] = useState(false);
 
   useEffect(() => {
     if (id) {
       loadRecipeDetail(id);
     }
   }, [id]);
+
+  useEffect(() => {
+    const cargarInventario = async () => {
+      try {
+        setLoadingInventario(true);
+        const response = await obtenerInventario();
+        setInventario(response.inventario);
+      } catch (err) {
+        console.error('Error cargando inventario:', err);
+      } finally {
+        setLoadingInventario(false);
+      }
+    };
+
+    cargarInventario();
+  }, []);
+
+  const tieneIngrediente = (nombreIngrediente: string): boolean => {
+    const nombreNorm = nombreIngrediente.toLowerCase().trim();
+    return inventario.some(item =>
+      item.ingrediente.nombre.toLowerCase().trim().includes(nombreNorm) ||
+      nombreNorm.includes(item.ingrediente.nombre.toLowerCase().trim())
+    );
+  };
 
   if (isLoading) {
     return (
@@ -72,18 +99,32 @@ const RecipeDetail = () => {
               <Text style={styles.sectionTitle}>Ingredientes</Text>
 
               {currentRecipe.ingredientes && currentRecipe.ingredientes.length > 0 ? (
-                currentRecipe.ingredientes.map((ing, idx) => (
-                  <View key={idx} style={styles.ingredientRow}>
-                    <Text style={styles.ingredientText}>
-                      {ing.cantidad} {ing.unidad} {ing.nombre}
-                    </Text>
-                    <Feather
-                      name="check-circle"
-                      size={18}
-                      color="#10B981"
-                    />
-                  </View>
-                ))
+                currentRecipe.ingredientes.map((ing, idx) => {
+                  const tieneEsteIngrediente = tieneIngrediente(ing.nombre);
+                  return (
+                    <View key={idx} style={styles.ingredientRow}>
+                      <Text style={[
+                        styles.ingredientText,
+                        tieneEsteIngrediente && styles.ingredientTextAvailable
+                      ]}>
+                        {ing.cantidad} {ing.unidad} {ing.nombre}
+                      </Text>
+                      {tieneEsteIngrediente ? (
+                        <Feather
+                          name="check-circle"
+                          size={20}
+                          color="#10B981"
+                        />
+                      ) : (
+                        <Feather
+                          name="circle"
+                          size={20}
+                          color="#D1D5DB"
+                        />
+                      )}
+                    </View>
+                  );
+                })
               ) : (
                 <Text style={styles.emptyText}>No hay ingredientes listados</Text>
               )}
@@ -146,6 +187,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: 1,
   },
   ingredientText: { color: '#374151', fontSize: 16, flex: 1 },
+  ingredientTextAvailable: { color: '#10B981', fontWeight: '600' },
   emptyText: { color: '#9CA3AF', fontStyle: 'italic' },
 
   primaryButton: {
