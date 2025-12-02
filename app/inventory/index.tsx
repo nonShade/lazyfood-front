@@ -122,13 +122,13 @@ const Inventory = () => {
             </View>
           ) : (
             ingredients.map((ingredient: any) => (
-              <IngredientCard
-                key={ingredient.id}
-                name={ingredient.name}
-                quantity={`${ingredient.quantity} disponible${ingredient.quantity !== 1 ? 's' : ''}`}
-                icon={ingredient.icon}
-                onEdit={() => handleEditIngredient(ingredient)}
-              />
+               <IngredientCard
+                 key={ingredient.id}
+                 name={ingredient.name}
+                 quantity={`${ingredient.quantity} ${ingredient.unit}`}
+                 icon={ingredient.icon}
+                 onEdit={() => handleEditIngredient(ingredient)}
+               />
             ))
           )}
         </View>
@@ -140,6 +140,7 @@ const Inventory = () => {
         visible={addModalVisible}
         onClose={() => setAddModalVisible(false)}
         onAdd={handleAddIngredients}
+        existingIngredients={ingredients}
       />
 
       <EditIngredientModal

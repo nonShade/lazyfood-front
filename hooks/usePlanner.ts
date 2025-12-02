@@ -17,12 +17,10 @@ const formatDateForAPI = (date: Date): string => {
   return date.toISOString().split("T")[0];
 };
 
-const getMondayOfWeek = (date: Date): Date => {
-  const monday = new Date(date);
-  const day = monday.getDay();
-  const diff = day === 0 ? -6 : 1 - day; // Si es domingo (0), retroceder 6 días
-  monday.setDate(monday.getDate() + diff);
-  return monday;
+const getCurrentDateAsStart = (date: Date): Date => {
+  const current = new Date(date);
+  current.setHours(0, 0, 0, 0);
+  return current;
 };
 
 const createRecipeFromPlannedMeal = (meal: any): Recipe => {
@@ -46,7 +44,6 @@ const convertAPIResponseToWeekPlan = (
   const startDate = apiResponse.semana;
   const startDateObj = new Date(startDate);
 
-  // Generar array de días para la semana (7 días desde el lunes)
   const days: DayPlan[] = [];
   for (let i = 0; i < 7; i++) {
     const currentDate = new Date(startDateObj);
@@ -214,8 +211,8 @@ export const usePlanner = (userId: string) => {
             }
 
             const targetDate = date || selectedDate;
-            const mondayOfWeek = getMondayOfWeek(targetDate);
-            const fechaAPI = formatDateForAPI(mondayOfWeek);
+            const currentAsStart = getCurrentDateAsStart(targetDate);
+            const fechaAPI = formatDateForAPI(currentAsStart);
             const requestId = `${fechaAPI}-${userId}`;
 
             currentRequestRef.current = requestId;
@@ -263,7 +260,7 @@ export const usePlanner = (userId: string) => {
           } catch (err) {
             console.error("Error loading week plan:", err);
 
-            const requestId = `${formatDateForAPI(getMondayOfWeek(date || selectedDate))}-${userId}`;
+            const requestId = `${formatDateForAPI(getCurrentDateAsStart(date || selectedDate))}-${userId}`;
             if (currentRequestRef.current === requestId) {
               setError(
                 err instanceof Error
@@ -283,7 +280,7 @@ export const usePlanner = (userId: string) => {
   );
 
   useEffect(() => {
-    loadWeekPlan();
+    loadWeekPlan(new Date());
 
     return () => {
       if (timeoutRef.current) {
@@ -294,13 +291,23 @@ export const usePlanner = (userId: string) => {
   }, []); // Solo ejecutar una vez al montar
 
   useEffect(() => {
-    const currentMondayString = formatDateForAPI(getMondayOfWeek(selectedDate));
-    const weekPlanMondayString = weekPlan ? weekPlan.startDate : "";
+    const today = new Date();
+    const currentTodayString = formatDateForAPI(today);
 
-    if (currentMondayString !== weekPlanMondayString) {
-      loadWeekPlan(selectedDate);
+    if (weekPlan) {
+      const startDate = new Date(weekPlan.startDate);
+      const endDate = new Date(weekPlan.endDate);
+      const todayDate = new Date(currentTodayString);
+
+      const isWithinRange = todayDate >= startDate && todayDate <= endDate;
+
+      if (!isWithinRange) {
+        loadWeekPlan(today);
+      }
+    } else {
+      loadWeekPlan(today);
     }
-  }, [selectedDate, weekPlan, loadWeekPlan]);
+  }, [weekPlan, loadWeekPlan]);
 
   const getStatsForMonth = useCallback((): PlannerStats => {
     if (!weekPlan) {
@@ -422,4 +429,3 @@ export const usePlanner = (userId: string) => {
     clearCache,
   };
 };
-

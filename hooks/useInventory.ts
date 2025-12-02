@@ -10,6 +10,7 @@ interface Ingredient {
   quantity: number;
   category: string;
   icon: string;
+  unit: string;
 }
 
 export const useInventory = () => {
@@ -26,6 +27,7 @@ export const useInventory = () => {
     quantity: apiIngredient.cantidad,
     category: apiIngredient.ingrediente.categoria || "Sin categoría",
     icon: apiIngredient.ingrediente.emoji || "🥫",
+    unit: apiIngredient.ingrediente.unidad || "disponibles",
   });
 
   const loadInventory = async () => {
@@ -62,7 +64,11 @@ export const useInventory = () => {
         if (existingIndex >= 0) {
           updated[existingIndex].quantity += newIng.quantity;
         } else {
-          updated.push(newIng);
+          const ingredientWithUnit: Ingredient = {
+            ...newIng,
+            unit: newIng.unit || "unidades",
+          };
+          updated.push(ingredientWithUnit);
         }
       });
 

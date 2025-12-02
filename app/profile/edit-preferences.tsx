@@ -41,12 +41,7 @@ export default function EditPreferences() {
   };
 
   const handleSave = () => {
-    console.log('Preferencias guardadas:', {
-      diet: selectedDiet,
-      allergies: selectedAllergies,
-      likes: selectedLikes,
-    });
-        setPreferences({ diet: selectedDiet, allergies: selectedAllergies, likes: selectedLikes });
+    setPreferences({ diet: selectedDiet, allergies: selectedAllergies, likes: selectedLikes });
     router.back();
   };
 

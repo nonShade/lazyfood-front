@@ -10,6 +10,7 @@ type EditIngredientModalProps = {
         category: string;
         icon: string;
         quantity: number;
+        unit: string;
     } | null;
     onClose: () => void;
     onSave: (ingredient: any) => void;
@@ -69,7 +70,7 @@ const EditIngredientModal = ({ visible, ingredient, onClose, onSave, onDelete }:
                                 <Text style={styles.quantityButtonText}>+</Text>
                             </TouchableOpacity>
                         </View>
-                        <Text style={styles.quantityUnit}>unidades</Text>
+                         <Text style={styles.quantityUnit}>{ingredient.unit}</Text>
                     </View>
 
                     <TouchableOpacity style={styles.saveButton} onPress={handleSave}>
