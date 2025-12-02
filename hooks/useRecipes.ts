@@ -35,9 +35,27 @@ export const useRecipes = () => {
         setIsLoading(true);
         setError(null);
         try {
-            const receta = await obtenerDetalleReceta(recetaId);
-            setCurrentRecipe(receta);
-            return receta;
+            const recetaEnCache = recipes.find(r => r.id === recetaId);
+
+            if (recetaEnCache) {
+                setCurrentRecipe(recetaEnCache);
+
+                try {
+                    const recetaBackend = await obtenerDetalleReceta(recetaId);
+                    setCurrentRecipe({
+                        ...recetaEnCache,
+                        pasos: recetaBackend.pasos || []
+                    });
+                } catch (err) {
+                    console.warn('No se pudieron obtener pasos del backend, usando cache');
+                }
+
+                return recetaEnCache;
+            } else {
+                const receta = await obtenerDetalleReceta(recetaId);
+                setCurrentRecipe(receta);
+                return receta;
+            }
         } catch (err) {
             const errorMessage = err instanceof Error ? err.message : 'Error al cargar receta';
             setError(errorMessage);
@@ -45,7 +63,7 @@ export const useRecipes = () => {
         } finally {
             setIsLoading(false);
         }
-    }, []);
+    }, [recipes]);
 
     const generateSteps = useCallback(async (recetaId: number) => {
         setIsLoading(true);
