@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  obtenerInventario,
+  actualizarInventario,
   InventoryIngredient,
+  obtenerInventario,
 } from "../services/api/inventoryService";
 
 interface Ingredient {
@@ -72,8 +73,13 @@ export const useInventory = () => {
         }
       });
 
-      return updated;
-    });
+      await actualizarInventario(apiIngredients);
+      await loadInventory();
+    } catch (err: any) {
+      console.error("Error adding ingredients:", err);
+      setError(err.message || "Error al agregar ingredientes");
+      setIsLoading(false);
+    }
   };
 
   const updateIngredient = (updatedIngredient: Ingredient) => {

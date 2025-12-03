@@ -7,11 +7,13 @@ interface Props {
   onProfilePress?: () => void;
 }
 
-const HomeHeader: React.FC<Props> = ({ userName = 'María', onProfilePress }) => {
+const HomeHeader: React.FC<Props> = ({ userName = '', onProfilePress }) => {
+  const displayName = userName || 'Usuario';
+
   return (
     <View style={styles.container}>
       <View style={styles.texts}>
-        <Text style={styles.greeting}>¡Hola, {userName}!</Text>
+        <Text style={styles.greeting}>¡Hola, {displayName}!</Text>
         <Text style={styles.subtitle}>¿Qué cocinamos hoy?</Text>
       </View>
 
