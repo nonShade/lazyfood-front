@@ -14,6 +14,7 @@ export interface PlannedMeal {
   receta_id?: number;
   receta_nombre?: string;
   es_sugerida?: boolean;
+  emoji?: string;
 }
 
 export interface DayPlan {

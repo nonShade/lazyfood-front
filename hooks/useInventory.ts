@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useState, useEffect, useCallback } from "react";
 import {
   actualizarInventario,
   InventoryIngredient,
@@ -11,6 +11,7 @@ interface Ingredient {
   quantity: number;
   category: string;
   icon: string;
+  unit: string;
 }
 
 export const useInventory = () => {
@@ -27,6 +28,7 @@ export const useInventory = () => {
     quantity: apiIngredient.cantidad,
     category: apiIngredient.ingrediente.categoria || "Sin categoría",
     icon: apiIngredient.ingrediente.emoji || "🥫",
+    unit: apiIngredient.ingrediente.unidad || "disponibles",
   });
 
   const loadInventory = async () => {
@@ -54,19 +56,22 @@ export const useInventory = () => {
     return loadInventory();
   }, []);
 
-  const addIngredients = async (newIngredients: Ingredient[]) => {
-    try {
-      setIsLoading(true);
-      const apiIngredients = newIngredients.map(ing => ({
-        id: ing.id || ing.name,
-        name: ing.name,
-        quantity: ing.quantity,
-        unit: 'unidades',
-        confidence: 1.0,
-        emoji: ing.icon,
-        category: ing.category,
-        state: 'good'
-      }));
+  const addIngredients = (newIngredients: Ingredient[]) => {
+    setIngredients((prev) => {
+      const updated = [...prev];
+
+      newIngredients.forEach((newIng) => {
+        const existingIndex = updated.findIndex((ing) => ing.id === newIng.id);
+        if (existingIndex >= 0) {
+          updated[existingIndex].quantity += newIng.quantity;
+        } else {
+          const ingredientWithUnit: Ingredient = {
+            ...newIng,
+            unit: newIng.unit || "unidades",
+          };
+          updated.push(ingredientWithUnit);
+        }
+      });
 
       await actualizarInventario(apiIngredients);
       await loadInventory();

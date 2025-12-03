@@ -3,11 +3,14 @@ import { useState } from 'react';
 import { Alert } from 'react-native';
 import IngredientScanner from '../../components/scanner/IngredientScanner';
 import { DetectedIngredient } from '../../services/scanner/scannerService';
-import { actualizarInventario } from '../../services/api/inventoryService';
+import { actualizarInventario, obtenerInventario } from '../../services/api/inventoryService';
+import { generarSugerenciasSemanalIA, generarRecomendacionesIA } from '../../services/api/plannerService';
+import { usePlannerCache } from '../../hooks/usePlannerCache';
 
 export default function ScannerScreen() {
   const router = useRouter();
   const [isUpdatingInventory, setIsUpdatingInventory] = useState(false);
+  const { clearCache } = usePlannerCache();
 
   const handleBack = () => {
     router.back();
@@ -25,12 +28,37 @@ export default function ScannerScreen() {
       // Actualizar inventario con los ingredientes detectados
       const result = await actualizarInventario(ingredients);
 
+      clearCache();
+
+      try {
+        try {
+          await generarSugerenciasSemanalIA();
+        } catch (sugerenciasError: any) {
+
+          if (sugerenciasError.message && sugerenciasError.message.includes('Genera recomendaciones antes')) {
+            try {
+              await generarRecomendacionesIA();
+
+              await generarSugerenciasSemanalIA();
+            } catch (recomendacionesError) {
+              throw sugerenciasError;
+            }
+          } else {
+            throw sugerenciasError;
+          }
+        }
+      } catch (generalError) {
+        console.warn('Error generando sugerencias IA:', generalError);
+      }
+
       setTimeout(() => {
         router.push({
           pathname: '/inventory',
           params: {
             refresh: 'true',
-            scannedUpdate: JSON.stringify(result.detalles)
+            scannedUpdate: JSON.stringify(result.detalles),
+            plannerRefresh: 'true',
+            timestamp: Date.now().toString()
           }
         });
       }, 100);
@@ -54,6 +82,7 @@ export default function ScannerScreen() {
     <IngredientScanner
       onBack={handleBack}
       onConfirm={handleConfirm}
+      isUpdatingInventory={isUpdatingInventory}
     />
   );
 }

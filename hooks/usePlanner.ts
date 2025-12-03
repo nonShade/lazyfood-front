@@ -6,23 +6,21 @@ import {
   Recipe,
   WeeklyAPIResponse,
 } from "../types/planner";
-import { formatDate } from "../utils/dateUtils";
-import { 
-  obtenerPlanificacionSemanal, 
-  generarSugerenciasSemanalIA 
+import {
+  obtenerPlanificacionSemanal,
+  generarSugerenciasSemanalIA,
+  generarRecomendacionesIA,
 } from "../services/api/plannerService";
-import type { AISuggestionsResponse } from "../types/planner";
+import { usePlannerCache } from "./usePlannerCache";
 
 const formatDateForAPI = (date: Date): string => {
   return date.toISOString().split("T")[0];
 };
 
-const getMondayOfWeek = (date: Date): Date => {
-  const monday = new Date(date);
-  const day = monday.getDay();
-  const diff = day === 0 ? -6 : 1 - day; // Si es domingo (0), retroceder 6 días
-  monday.setDate(monday.getDate() + diff);
-  return monday;
+const getCurrentDateAsStart = (date: Date): Date => {
+  const current = new Date(date);
+  current.setHours(0, 0, 0, 0);
+  return current;
 };
 
 const createRecipeFromPlannedMeal = (meal: any): Recipe => {
@@ -32,7 +30,7 @@ const createRecipeFromPlannedMeal = (meal: any): Recipe => {
     time: 0,
     calories: 0,
     difficulty: "Fácil",
-    icon: "🍽️",
+    icon: meal.emoji || "🍽️",
     description: "",
     ingredients: [],
     instructions: [],
@@ -46,7 +44,6 @@ const convertAPIResponseToWeekPlan = (
   const startDate = apiResponse.semana;
   const startDateObj = new Date(startDate);
 
-  // Generar array de días para la semana (7 días desde el lunes)
   const days: DayPlan[] = [];
   for (let i = 0; i < 7; i++) {
     const currentDate = new Date(startDateObj);
@@ -54,18 +51,16 @@ const convertAPIResponseToWeekPlan = (
     const dateString = formatDateForAPI(currentDate);
 
     const dayMenu = apiResponse.menus[dateString];
-    const dayPlan: DayPlan = {
-      date: dateString,
-    };
+    const dayPlan: DayPlan = { date: dateString };
 
     if (dayMenu) {
-      if (dayMenu.desayuno) {
+      if (dayMenu.desayuno?.receta_id) {
         dayPlan.breakfast = createRecipeFromPlannedMeal(dayMenu.desayuno);
       }
-      if (dayMenu.almuerzo) {
+      if (dayMenu.almuerzo?.receta_id) {
         dayPlan.lunch = createRecipeFromPlannedMeal(dayMenu.almuerzo);
       }
-      if (dayMenu.cena) {
+      if (dayMenu.cena?.receta_id) {
         dayPlan.dinner = createRecipeFromPlannedMeal(dayMenu.cena);
       }
     }
@@ -73,7 +68,6 @@ const convertAPIResponseToWeekPlan = (
     days.push(dayPlan);
   }
 
-  // Calcular fecha de fin (domingo)
   const endDate = new Date(startDateObj);
   endDate.setDate(startDateObj.getDate() + 6);
 
@@ -85,17 +79,109 @@ const convertAPIResponseToWeekPlan = (
   };
 };
 
-// Cache global para evitar llamadas duplicadas
-const planCache = new Map<
-  string,
-  {
-    data: WeeklyAPIResponse;
-    timestamp: number;
-    weekPlan: WeekPlan;
-  }
->();
+const extractRecipesFromWeekPlan = (weekPlan: WeekPlan): Recipe[] => {
+  const recipes: Recipe[] = [];
 
-const CACHE_DURATION = 5 * 60 * 1000; // 5 minutos
+  weekPlan.days.forEach((day) => {
+    if (day.breakfast) recipes.push(day.breakfast);
+    if (day.lunch) recipes.push(day.lunch);
+    if (day.dinner) recipes.push(day.dinner);
+  });
+
+  return recipes.filter(
+    (recipe, index, arr) => arr.findIndex((r) => r.id === recipe.id) === index,
+  );
+};
+
+const convertAPIRecipesToInternal = (apiRecipes: any[]): Recipe[] => {
+  return apiRecipes.map((recipe: any) => ({
+    id: recipe.id || Math.random(),
+    name: recipe.name || recipe.titulo || "Sin nombre",
+    time: recipe.tiempo_preparacion || 30,
+    calories: recipe.calorias || 300,
+    difficulty: recipe.dificultad || "Medio",
+    icon: recipe.emoji || "🍽️",
+    description: recipe.descripcion || "",
+    ingredients: recipe.ingredientes || [],
+    instructions: recipe.instrucciones || [],
+  }));
+};
+
+const generatePlanningIfNeeded = async (
+  fechaAPI: string,
+): Promise<WeeklyAPIResponse | null> => {
+  try {
+    return await obtenerPlanificacionSemanal(fechaAPI);
+  } catch {
+    try {
+      await generarSugerenciasSemanalIA();
+      return await obtenerPlanificacionSemanal(fechaAPI);
+    } catch (sugerenciasError: any) {
+      if (sugerenciasError.message?.includes("Genera recomendaciones antes")) {
+        try {
+          await generarRecomendacionesIA();
+          await generarSugerenciasSemanalIA();
+          return await obtenerPlanificacionSemanal(fechaAPI);
+        } catch (recomendacionesError) {
+          console.error(
+            "Error generando recomendaciones base:",
+            recomendacionesError,
+          );
+          return null;
+        }
+      } else {
+        console.error("Error generando sugerencias IA:", sugerenciasError);
+        return null;
+      }
+    }
+  }
+};
+
+const handleEmptyPlanning = async (
+  apiResponse: WeeklyAPIResponse,
+  fechaAPI: string,
+): Promise<WeeklyAPIResponse> => {
+  if (apiResponse.menus && Object.keys(apiResponse.menus).length > 0) {
+    return apiResponse;
+  }
+
+  try {
+    await generarSugerenciasSemanalIA();
+    return await obtenerPlanificacionSemanal(fechaAPI);
+  } catch (autoGenerateError: any) {
+    if (autoGenerateError.message?.includes("Genera recomendaciones antes")) {
+      try {
+        await generarRecomendacionesIA();
+        await generarSugerenciasSemanalIA();
+        return await obtenerPlanificacionSemanal(fechaAPI);
+      } catch {
+        return apiResponse; // Devuelve vacío si no se pudo generar
+      }
+    }
+  }
+
+  return apiResponse;
+};
+
+const loadBaseRecipesIfNeeded = async (
+  recipes: Recipe[],
+): Promise<Recipe[]> => {
+  if (recipes.length > 0) {
+    return recipes;
+  }
+
+  try {
+    const baseRecipes = await generarRecomendacionesIA();
+    if (baseRecipes?.length > 0) {
+      const convertedBaseRecipes = convertAPIRecipesToInternal(baseRecipes);
+      return [...recipes, ...convertedBaseRecipes];
+    }
+  } catch (baseRecipesError) {
+    console.error("Error cargando recetas base:", baseRecipesError);
+  }
+
+  return recipes;
+};
 
 export const usePlanner = (userId: string) => {
   const [weekPlan, setWeekPlan] = useState<WeekPlan | null>(null);
@@ -105,9 +191,9 @@ export const usePlanner = (userId: string) => {
   const [error, setError] = useState<string | null>(null);
   const [allRecipes, setAllRecipes] = useState<Recipe[]>([]);
 
-  // Refs para controlar llamadas concurrentes y debouncing
+  const { getCachedPlan, setCachedPlan, clearCacheForUser } = usePlannerCache();
   const loadingRef = useRef(false);
-  const timeoutRef = useRef<NodeJS.Timeout>();
+  const timeoutRef = useRef<any>(null);
   const currentRequestRef = useRef<string>("");
 
   const loadWeekPlan = useCallback(
@@ -125,32 +211,19 @@ export const usePlanner = (userId: string) => {
             }
 
             const targetDate = date || selectedDate;
-            const mondayOfWeek = getMondayOfWeek(targetDate);
-            const fechaAPI = formatDateForAPI(mondayOfWeek);
-
+            const currentAsStart = getCurrentDateAsStart(targetDate);
+            const fechaAPI = formatDateForAPI(currentAsStart);
             const requestId = `${fechaAPI}-${userId}`;
+
             currentRequestRef.current = requestId;
 
-            const cachedData = planCache.get(requestId);
-            const now = Date.now();
-
-            if (cachedData && now - cachedData.timestamp < CACHE_DURATION) {
-              console.log("📦 Usando datos del cache para:", fechaAPI);
+            const cachedData = getCachedPlan(requestId);
+            if (cachedData) {
               setWeekPlan(cachedData.weekPlan);
-
-              const recipes: Recipe[] = [];
-              cachedData.weekPlan.days.forEach((day) => {
-                if (day.breakfast) recipes.push(day.breakfast);
-                if (day.lunch) recipes.push(day.lunch);
-                if (day.dinner) recipes.push(day.dinner);
-              });
-
-              const uniqueRecipes = recipes.filter(
-                (recipe, index, arr) =>
-                  arr.findIndex((r) => r.id === recipe.id) === index,
+              const extractedRecipes = extractRecipesFromWeekPlan(
+                cachedData.weekPlan,
               );
-
-              setAllRecipes(uniqueRecipes);
+              setAllRecipes(extractedRecipes);
               setError(null);
               resolve();
               return;
@@ -160,22 +233,15 @@ export const usePlanner = (userId: string) => {
             setError(null);
             loadingRef.current = true;
 
-            let apiResponse;
-            try {
-              apiResponse = await obtenerPlanificacionSemanal(fechaAPI);
-            } catch (planError) {
-              console.log("📅 No hay planificación, intentando generar sugerencias IA...");
-              try {
-                await generarSugerenciasSemanalIA();
-                apiResponse = await obtenerPlanificacionSemanal(fechaAPI);
-              } catch (aiError) {
-                console.error("Error generando sugerencias IA:", aiError);
-                throw planError;
-              }
+            let apiResponse = await generatePlanningIfNeeded(fechaAPI);
+
+            if (!apiResponse) {
+              throw new Error("No se pudo obtener o generar planificación");
             }
 
+            apiResponse = await handleEmptyPlanning(apiResponse, fechaAPI);
+
             if (currentRequestRef.current !== requestId) {
-              loadingRef.current = false;
               resolve();
               return;
             }
@@ -184,56 +250,37 @@ export const usePlanner = (userId: string) => {
               apiResponse,
               userId,
             );
-
-            planCache.set(requestId, {
-              data: apiResponse,
-              timestamp: now,
-              weekPlan: convertedWeekPlan,
-            });
-
+            setCachedPlan(requestId, apiResponse, convertedWeekPlan);
             setWeekPlan(convertedWeekPlan);
 
-            const recipes: Recipe[] = [];
-            convertedWeekPlan.days.forEach((day) => {
-              if (day.breakfast) recipes.push(day.breakfast);
-              if (day.lunch) recipes.push(day.lunch);
-              if (day.dinner) recipes.push(day.dinner);
-            });
-
-            const uniqueRecipes = recipes.filter(
-              (recipe, index, arr) =>
-                arr.findIndex((r) => r.id === recipe.id) === index,
-            );
-
-            setAllRecipes(uniqueRecipes);
+            let extractedRecipes =
+              extractRecipesFromWeekPlan(convertedWeekPlan);
+            extractedRecipes = await loadBaseRecipesIfNeeded(extractedRecipes);
+            setAllRecipes(extractedRecipes);
           } catch (err) {
             console.error("Error loading week plan:", err);
 
-            const requestId = `${formatDateForAPI(getMondayOfWeek(date || selectedDate))}-${userId}`;
-            if (currentRequestRef.current !== requestId) {
-              loadingRef.current = false;
-              resolve();
-              return;
+            const requestId = `${formatDateForAPI(getCurrentDateAsStart(date || selectedDate))}-${userId}`;
+            if (currentRequestRef.current === requestId) {
+              setError(
+                err instanceof Error
+                  ? err.message
+                  : "Error al cargar la planificación",
+              );
             }
-
-            setError(
-              err instanceof Error
-                ? err.message
-                : "Error al cargar la planificación",
-            );
           } finally {
             loadingRef.current = false;
             setIsLoading(false);
             resolve();
           }
-        }, 300);
+        }, 300); // Debounce de 300ms
       });
     },
-    [userId, selectedDate],
+    [userId, selectedDate, getCachedPlan, setCachedPlan],
   );
 
   useEffect(() => {
-    loadWeekPlan();
+    loadWeekPlan(new Date());
 
     return () => {
       if (timeoutRef.current) {
@@ -244,13 +291,23 @@ export const usePlanner = (userId: string) => {
   }, []); // Solo ejecutar una vez al montar
 
   useEffect(() => {
-    const currentMondayString = formatDateForAPI(getMondayOfWeek(selectedDate));
-    const weekPlanMondayString = weekPlan ? weekPlan.startDate : "";
+    const today = new Date();
+    const currentTodayString = formatDateForAPI(today);
 
-    if (currentMondayString !== weekPlanMondayString) {
-      loadWeekPlan(selectedDate);
+    if (weekPlan) {
+      const startDate = new Date(weekPlan.startDate);
+      const endDate = new Date(weekPlan.endDate);
+      const todayDate = new Date(currentTodayString);
+
+      const isWithinRange = todayDate >= startDate && todayDate <= endDate;
+
+      if (!isWithinRange) {
+        loadWeekPlan(today);
+      }
+    } else {
+      loadWeekPlan(today);
     }
-  }, [selectedDate, weekPlan, loadWeekPlan]);
+  }, [weekPlan, loadWeekPlan]);
 
   const getStatsForMonth = useCallback((): PlannerStats => {
     if (!weekPlan) {
@@ -274,6 +331,7 @@ export const usePlanner = (userId: string) => {
       (sum, recipe) => sum + (recipe?.calories || 0),
       0,
     );
+
     const averageCaloriesPerDay =
       daysWithRecipes.length > 0 ? totalCalories / daysWithRecipes.length : 0;
 
@@ -302,7 +360,6 @@ export const usePlanner = (userId: string) => {
   const getDayPlan = useCallback(
     (date: Date): DayPlan | null => {
       if (!weekPlan) return null;
-
       const dateString = formatDateForAPI(date);
       return weekPlan.days.find((day) => day.date === dateString) || null;
     },
@@ -318,22 +375,13 @@ export const usePlanner = (userId: string) => {
         (recipe) => !exclude?.includes(recipe.id),
       );
 
-      const breakfastKeywords = ["desayuno", "toast", "huevo", "smoothie"];
-      const lunchKeywords = ["almuerzo", "ensalada", "pasta", "sofrito"];
-      const dinnerKeywords = ["cena", "pollo", "salmón", "curry"];
+      const mealKeywords = {
+        breakfast: ["desayuno", "toast", "huevo", "smoothie"],
+        lunch: ["almuerzo", "ensalada", "pasta", "sofrito"],
+        dinner: ["cena", "pollo", "salmón", "curry"],
+      };
 
-      let keywords: string[] = [];
-      switch (mealType) {
-        case "breakfast":
-          keywords = breakfastKeywords;
-          break;
-        case "lunch":
-          keywords = lunchKeywords;
-          break;
-        case "dinner":
-          keywords = dinnerKeywords;
-          break;
-      }
+      const keywords = mealKeywords[mealType] || [];
 
       const suitableRecipes = availableRecipes.filter((recipe) =>
         keywords.some((keyword) => recipe.name.toLowerCase().includes(keyword)),
@@ -354,18 +402,13 @@ export const usePlanner = (userId: string) => {
   );
 
   const refreshWeekPlan = useCallback(() => {
-    const targetDate = selectedDate;
-    const mondayOfWeek = getMondayOfWeek(targetDate);
-    const fechaAPI = formatDateForAPI(mondayOfWeek);
-    const requestId = `${fechaAPI}-${userId}`;
-
-    planCache.delete(requestId);
+    clearCacheForUser(userId);
     loadWeekPlan(selectedDate);
-  }, [loadWeekPlan, selectedDate, userId]);
+  }, [loadWeekPlan, selectedDate, userId, clearCacheForUser]);
 
   const clearCache = useCallback(() => {
-    planCache.clear();
-  }, []);
+    clearCacheForUser(userId);
+  }, [clearCacheForUser, userId]);
 
   return {
     weekPlan,
@@ -374,8 +417,10 @@ export const usePlanner = (userId: string) => {
     currentMonth,
     isLoading,
     error,
+
     setSelectedDate,
     setCurrentMonth,
+
     getStatsForMonth,
     getDayPlan,
     getAISuggestions,

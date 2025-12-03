@@ -1,8 +1,7 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { DayPlan } from '../../types/planner';
-import { getNext7Days, isDateInNext7Days } from '../../utils/dateUtils';
 
 interface CalendarProps {
   currentMonth: Date;
@@ -26,11 +25,24 @@ const Calendar: React.FC<CalendarProps> = ({
 
   const weekDays = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 
-  const suggestedDays = useMemo(() => getNext7Days(), []);
-
-  const isSuggestedDay = (day: number): boolean => {
+  const isInValidRange = (day: number): boolean => {
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-    return isDateInNext7Days(date, suggestedDays);
+    const today = new Date();
+
+    today.setHours(0, 0, 0, 0);
+    date.setHours(0, 0, 0, 0);
+
+    const timeDiff = date.getTime() - today.getTime();
+    const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24));
+
+    return daysDiff >= 0 && daysDiff <= 6;
+  };
+
+  const shouldShowRecipeStyle = (day: number): boolean => {
+    const hasRecipes = hasRecipesForDate(day);
+    const inValidRange = isInValidRange(day);
+
+    return hasRecipes && inValidRange;
   };
 
   const getDaysInMonth = (date: Date) => {
@@ -42,13 +54,32 @@ const Calendar: React.FC<CalendarProps> = ({
   };
 
   const hasRecipesForDate = (day: number): boolean => {
-    if (!weekPlan?.days) return false;
+    if (!weekPlan?.days) {
+      return false;
+    }
 
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
     const dateString = date.toISOString().split('T')[0];
 
     const dayPlan = weekPlan.days.find((d: DayPlan) => d.date === dateString);
+    
     return Boolean(dayPlan?.breakfast || dayPlan?.lunch || dayPlan?.dinner);
+  };
+
+  const getEmojisForDate = (day: number): string[] => {
+    if (!weekPlan?.days) return [];
+
+    const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    const dateString = date.toISOString().split('T')[0];
+
+    const dayPlan = weekPlan.days.find((d: DayPlan) => d.date === dateString);
+    const emojis: string[] = [];
+
+    if (dayPlan?.breakfast?.icon) emojis.push(dayPlan.breakfast.icon);
+    if (dayPlan?.lunch?.icon) emojis.push(dayPlan.lunch.icon);
+    if (dayPlan?.dinner?.icon) emojis.push(dayPlan.dinner.icon);
+
+    return emojis.slice(0, 3);
   };
 
   const isDateSelected = (day: number): boolean => {
@@ -67,9 +98,9 @@ const Calendar: React.FC<CalendarProps> = ({
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const hasRecipes = hasRecipesForDate(day);
+      const shouldShowRecipes = shouldShowRecipeStyle(day);
       const isSelected = isDateSelected(day);
-      const isSuggested = isSuggestedDay(day);
+      const emojis = getEmojisForDate(day);
 
       days.push(
         <TouchableOpacity
@@ -84,8 +115,7 @@ const Calendar: React.FC<CalendarProps> = ({
           <View
             style={[
               styles.dayContent,
-              hasRecipes && styles.dayWithRecipes,
-              isSuggested && !hasRecipes && styles.suggestedDay,
+              shouldShowRecipes && styles.dayWithRecipes,
               isSelected && styles.selectedDay,
             ]}
           >
@@ -97,6 +127,14 @@ const Calendar: React.FC<CalendarProps> = ({
             >
               {day}
             </Text>
+            {emojis.length > 0 && (
+              <View style={styles.emojisContainer}>
+                <Text style={styles.emojisText}>
+                  {emojis.slice(0, 2).join('')}
+                  {emojis.length > 2 ? '...' : ''}
+                </Text>
+              </View>
+            )}
           </View>
         </TouchableOpacity>
       );
@@ -138,7 +176,7 @@ const Calendar: React.FC<CalendarProps> = ({
         <View style={styles.legend}>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, styles.recipeDot]} />
-            <Text style={styles.legendText}>Días con recetas</Text>
+            <Text style={styles.legendText}>Días con recetas (próximos 7 días)</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, styles.selectedDot]} />
@@ -205,12 +243,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#F59E0B',
   },
-  suggestedDay: {
-    backgroundColor: '#FEF3C7',
-    borderWidth: 1,
-    borderColor: '#D97706',
-    borderStyle: 'dashed',
-  },
   selectedDay: {
     backgroundColor: '#F59E0B',
   },
@@ -246,17 +278,21 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#F59E0B',
   },
-  suggestedDot: {
-    backgroundColor: '#FEF3C7',
-    borderWidth: 1,
-    borderColor: '#D97706',
-  },
   selectedDot: {
     backgroundColor: '#F59E0B',
   },
   legendText: {
     fontSize: 12,
     color: '#6B7280',
+  },
+  emojisContainer: {
+    marginTop: 2,
+    minHeight: 12,
+  },
+  emojisText: {
+    fontSize: 8,
+    textAlign: 'center',
+    lineHeight: 10,
   },
 });
 

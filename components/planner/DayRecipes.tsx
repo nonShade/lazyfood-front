@@ -11,6 +11,26 @@ interface DayRecipesProps {
   onClose?: () => void;
 }
 
+type MealType = 'breakfast' | 'lunch' | 'dinner';
+
+const WEEK_DAYS = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+const MONTHS = [
+  'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+  'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+];
+
+const MEAL_LABELS = {
+  breakfast: 'Desayuno',
+  lunch: 'Almuerzo',
+  dinner: 'Cena'
+} as const;
+
+const MEALS: { type: MealType }[] = [
+  { type: 'breakfast' },
+  { type: 'lunch' },
+  { type: 'dinner' },
+];
+
 const DayRecipes: React.FC<DayRecipesProps> = ({
   selectedDate,
   dayPlan,
@@ -19,13 +39,7 @@ const DayRecipes: React.FC<DayRecipesProps> = ({
   const { getAISuggestions } = usePlanner('user123');
   const [suggestionOverrides, setSuggestionOverrides] = useState<Record<string, Recipe>>({});
 
-  const weekDays = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-  const months = [
-    'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
-    'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
-  ];
-
-  const isFutureDate = () => {
+  const isFutureDate = (): boolean => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
     const selected = new Date(selectedDate);
@@ -33,29 +47,28 @@ const DayRecipes: React.FC<DayRecipesProps> = ({
     return selected > today;
   };
 
-  const isInNext7Days = () => {
+  const isInNext7Days = (): boolean => {
     const next7Days = getNext7Days();
     return isDateInNext7Days(selectedDate, next7Days);
   };
 
-  const formatDate = () => {
-    const dayName = weekDays[selectedDate.getDay()];
+  const formatDate = (): string => {
+    const dayName = WEEK_DAYS[selectedDate.getDay()];
     const day = selectedDate.getDate();
-    const month = months[selectedDate.getMonth()];
+    const month = MONTHS[selectedDate.getMonth()];
     return `${dayName}, ${day} de ${month}`;
   };
 
-  const getMealTypeLabel = (mealType: string) => {
-    const labels = {
-      breakfast: 'Desayuno',
-      lunch: 'Almuerzo',
-      dinner: 'Cena'
-    };
-    return labels[mealType as keyof typeof labels] || mealType;
+  const getMealTypeLabel = (mealType: MealType): string => {
+    return MEAL_LABELS[mealType] || mealType;
   };
 
-  const getRecipeForMeal = (mealType: 'breakfast' | 'lunch' | 'dinner'): Recipe | null => {
-    const overrideKey = `${selectedDate.toISOString().split('T')[0]}-${mealType}`;
+  const getOverrideKey = (mealType: MealType): string => {
+    return `${selectedDate.toISOString().split('T')[0]}-${mealType}`;
+  };
+
+  const getRecipeForMeal = (mealType: MealType): Recipe | null => {
+    const overrideKey = getOverrideKey(mealType);
     if (suggestionOverrides[overrideKey]) {
       return suggestionOverrides[overrideKey];
     }
@@ -63,7 +76,6 @@ const DayRecipes: React.FC<DayRecipesProps> = ({
     if (dayPlan?.[mealType]) {
       return dayPlan[mealType];
     }
-
 
     if (isInNext7Days() || !isFutureDate()) {
       const suggestions = getAISuggestions(mealType);
@@ -73,13 +85,13 @@ const DayRecipes: React.FC<DayRecipesProps> = ({
     return null;
   };
 
-  const handleChangeRecipe = (mealType: 'breakfast' | 'lunch' | 'dinner') => {
+  const handleChangeRecipe = (mealType: MealType): void => {
     const currentRecipe = getRecipeForMeal(mealType);
     const excludeIds = currentRecipe ? [currentRecipe.id] : [];
     const suggestions = getAISuggestions(mealType, excludeIds);
 
     if (suggestions.length > 0) {
-      const overrideKey = `${selectedDate.toISOString().split('T')[0]}-${mealType}`;
+      const overrideKey = getOverrideKey(mealType);
       setSuggestionOverrides(prev => ({
         ...prev,
         [overrideKey]: suggestions[0]
@@ -87,7 +99,7 @@ const DayRecipes: React.FC<DayRecipesProps> = ({
     }
   };
 
-  const renderRecipeCard = (recipe: Recipe, mealType: 'breakfast' | 'lunch' | 'dinner') => (
+  const renderRecipeCard = (recipe: Recipe, mealType: MealType) => (
     <View key={`${mealType}-${recipe.id}`} style={styles.recipeCard}>
       <View style={styles.mealTypeHeader}>
         <Text style={styles.mealTypeText}>{getMealTypeLabel(mealType)}</Text>
@@ -116,7 +128,7 @@ const DayRecipes: React.FC<DayRecipesProps> = ({
     </View>
   );
 
-  const renderFutureMealSlot = (mealType: 'breakfast' | 'lunch' | 'dinner') => (
+  const renderFutureMealSlot = (mealType: MealType) => (
     <View key={`future-${mealType}`} style={[styles.recipeCard, styles.futureMealSlot]}>
       <View style={styles.mealTypeHeader}>
         <Text style={styles.mealTypeText}>{getMealTypeLabel(mealType)}</Text>
@@ -129,7 +141,7 @@ const DayRecipes: React.FC<DayRecipesProps> = ({
     </View>
   );
 
-  const renderEmptyMealSlot = (mealType: 'breakfast' | 'lunch' | 'dinner') => (
+  const renderEmptyMealSlot = (mealType: MealType) => (
     <View key={`empty-${mealType}`} style={[styles.recipeCard, styles.emptyMealSlot]}>
       <View style={styles.mealTypeHeader}>
         <Text style={styles.mealTypeText}>{getMealTypeLabel(mealType)}</Text>
@@ -141,14 +153,7 @@ const DayRecipes: React.FC<DayRecipesProps> = ({
     </View>
   );
 
-  const meals: { type: 'breakfast' | 'lunch' | 'dinner' }[] = [
-    { type: 'breakfast' },
-    { type: 'lunch' },
-    { type: 'dinner' },
-  ];
-
-  const renderMealSlot = (mealType: 'breakfast' | 'lunch' | 'dinner') => {
-
+  const renderMealSlot = (mealType: MealType) => {
     if (isFutureDate() && !isInNext7Days()) {
       return renderFutureMealSlot(mealType);
     }
@@ -169,7 +174,7 @@ const DayRecipes: React.FC<DayRecipesProps> = ({
         )}
       </View>
 
-      {meals.map(({ type }) => renderMealSlot(type))}
+      {MEALS.map(({ type }) => renderMealSlot(type))}
     </View>
   );
 };

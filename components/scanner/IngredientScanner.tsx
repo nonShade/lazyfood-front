@@ -21,11 +21,13 @@ import Card from "../ui/Card";
 interface IngredientScannerProps {
   onBack?: () => void;
   onConfirm?: (ingredients: DetectedIngredient[]) => void;
+  isUpdatingInventory?: boolean;
 }
 
 const IngredientScanner: React.FC<IngredientScannerProps> = ({
   onBack,
   onConfirm,
+  isUpdatingInventory = false,
 }) => {
   const [facing, setFacing] = useState<CameraType>("back");
   const [permission, requestPermission] = useCameraPermissions();
@@ -123,7 +125,7 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
         }).start();
       }
     } catch (err: any) {
-      console.error("❌ Upload failed:", err);
+      console.error("Upload failed:", err);
     } finally {
       setDragOver(false);
     }
@@ -242,10 +244,10 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
       style={styles.container}
       {...(Platform.OS === "web"
         ? {
-            onDragOver: handleDragOver,
-            onDragLeave: handleDragLeave,
-            onDrop: handleDrop,
-          }
+          onDragOver: handleDragOver,
+          onDragLeave: handleDragLeave,
+          onDrop: handleDrop,
+        }
         : {})}
     >
       <View style={styles.header}>
@@ -308,8 +310,8 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
                   {isUploading
                     ? "Uploading..."
                     : dragOver
-                    ? "Drop your image here!"
-                    : "Drag & drop an image or click below to upload"}
+                      ? "Drop your image here!"
+                      : "Drag & drop an image or click below to upload"}
                 </Text>
                 <Button onPress={handlePickFile} disabled={isUploading}>
                   {isUploading ? "Processing..." : "Upload Image"}
@@ -363,8 +365,9 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
                 size="lg"
                 onPress={handleConfirm}
                 style={styles.confirmButton}
+                disabled={isUpdatingInventory}
               >
-                Confirmar
+                {isUpdatingInventory ? "Guardando..." : "Confirmar"}
               </Button>
 
               <Text onPress={handleReset} style={styles.resetText}>
@@ -375,11 +378,15 @@ const IngredientScanner: React.FC<IngredientScannerProps> = ({
         </Animated.View>
       )}
 
-      {/* 🔥 Overlay simplificado usando el estado del hook */}
-      {(isUploading || error) && (
+      {(isUploading || error || isUpdatingInventory) && (
         <View style={error ? styles.overlayError : styles.overlay}>
-          {isUploading && !error && (
-            <ActivityIndicator size="large" color="#fbbf24" />
+          {(isUploading || isUpdatingInventory) && !error && (
+            <>
+              <ActivityIndicator size="large" color="#fbbf24" />
+              <Text style={styles.overlayText}>
+                {isUpdatingInventory ? "Guardando ingredientes..." : "Analizando imagen..."}
+              </Text>
+            </>
           )}
 
           {error && (
