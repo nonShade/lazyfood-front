@@ -56,28 +56,29 @@ export const useInventory = () => {
     return loadInventory();
   }, []);
 
-  const addIngredients = (newIngredients: Ingredient[]) => {
-    setIngredients((prev) => {
-      const updated = [...prev];
+  const addIngredients = async (newIngredients: Ingredient[]) => {
+    try {
+      setIsLoading(true);
+      setError(null);
 
-      newIngredients.forEach((newIng) => {
-        const existingIndex = updated.findIndex((ing) => ing.id === newIng.id);
-        if (existingIndex >= 0) {
-          updated[existingIndex].quantity += newIng.quantity;
-        } else {
-          const ingredientWithUnit: Ingredient = {
-            ...newIng,
-            unit: newIng.unit || "unidades",
-          };
-          updated.push(ingredientWithUnit);
-        }
-      });
+      const apiIngredients = newIngredients.map((ingredient) => ({
+        id: ingredient.id,
+        name: ingredient.name,
+        emoji: ingredient.icon,
+        category: ingredient.category,
+        quantity: ingredient.quantity,
+        unit: ingredient.unit,
+        state: "fresh",
+        confidence: 1.0,
+      }));
 
       await actualizarInventario(apiIngredients);
+
       await loadInventory();
     } catch (err: any) {
       console.error("Error adding ingredients:", err);
       setError(err.message || "Error al agregar ingredientes");
+    } finally {
       setIsLoading(false);
     }
   };

@@ -2,6 +2,7 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { DayPlan } from '../../types/planner';
+import { getNext7Days, isDateInNext7Days } from '../../utils/dateUtils';
 
 interface CalendarProps {
   currentMonth: Date;
@@ -25,17 +26,48 @@ const Calendar: React.FC<CalendarProps> = ({
 
   const weekDays = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 
-  const isInValidRange = (day: number): boolean => {
-    const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+  const isFutureDate = (day: number): boolean => {
     const today = new Date();
-
     today.setHours(0, 0, 0, 0);
+    const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
     date.setHours(0, 0, 0, 0);
+    return date > today;
+  };
 
-    const timeDiff = date.getTime() - today.getTime();
-    const daysDiff = Math.floor(timeDiff / (1000 * 3600 * 24));
+  const isInNext7DaysRange = (day: number): boolean => {
+    const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    const next7Days = getNext7Days();
+    return isDateInNext7Days(date, next7Days);
+  };
 
-    return daysDiff >= 0 && daysDiff <= 6;
+  const hasSuggestedRecipes = (day: number): boolean => {
+    const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    const dateString = date.toISOString().split('T')[0];
+
+    const dayPlan = weekPlan?.days.find((d: DayPlan) => d.date === dateString);
+    const dayPlanExists = Boolean(dayPlan);
+
+    if (dayPlanExists && !dayPlan?.breakfast && !dayPlan?.lunch && !dayPlan?.dinner) {
+      return isInNext7DaysRange(day) || !isFutureDate(day);
+    }
+
+    return false;
+  };
+
+  const isInValidRange = (day: number): boolean => {
+    if (!weekPlan) {
+      return false;
+    }
+
+    const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    const startDate = new Date(weekPlan.startDate);
+    const endDate = new Date(weekPlan.endDate);
+
+    date.setHours(0, 0, 0, 0);
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
+
+    return date >= startDate && date <= endDate;
   };
 
   const shouldShowRecipeStyle = (day: number): boolean => {
@@ -62,8 +94,10 @@ const Calendar: React.FC<CalendarProps> = ({
     const dateString = date.toISOString().split('T')[0];
 
     const dayPlan = weekPlan.days.find((d: DayPlan) => d.date === dateString);
-    
-    return Boolean(dayPlan?.breakfast || dayPlan?.lunch || dayPlan?.dinner);
+    const hasPlannedRecipes = Boolean(dayPlan?.breakfast || dayPlan?.lunch || dayPlan?.dinner);
+    const hasSuggestions = hasSuggestedRecipes(day);
+
+    return hasPlannedRecipes || hasSuggestions;
   };
 
   const getEmojisForDate = (day: number): string[] => {
@@ -176,7 +210,7 @@ const Calendar: React.FC<CalendarProps> = ({
         <View style={styles.legend}>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, styles.recipeDot]} />
-            <Text style={styles.legendText}>Días con recetas (próximos 7 días)</Text>
+            <Text style={styles.legendText}>Días con recetas planificadas</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, styles.selectedDot]} />
