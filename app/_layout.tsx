@@ -1,5 +1,6 @@
 import { Stack, usePathname } from 'expo-router';
-import { View, StyleSheet } from 'react-native';
+import { View, StyleSheet, StatusBar } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
 import BottomNavigation from '../components/common/BottomNavigation';
 import { useNavigation } from '../hooks/useNavigation';
 
@@ -29,28 +30,31 @@ export default function RootLayout() {
   const navigationItems = getNavigationItems(getActiveRoute());
 
   return (
-    <View style={styles.container}>
-      <Stack
-        screenOptions={{
-          headerShown: false,
-        }}
-      >
-        <Stack.Screen name="index" />
-        <Stack.Screen name="home/index" />
-        <Stack.Screen name="planner/index" />
-        <Stack.Screen name="inventory/index" />
-        <Stack.Screen name="scanner/index" />
-        <Stack.Screen name="recipe/recipe" />
-        <Stack.Screen name="(auth)/Login" />
-      </Stack>
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+          }}
+        >
+          <Stack.Screen name="index" />
+          <Stack.Screen name="home/index" />
+          <Stack.Screen name="planner/index" />
+          <Stack.Screen name="inventory/index" />
+          <Stack.Screen name="scanner/index" />
+          <Stack.Screen name="recipe/recipe" />
+          <Stack.Screen name="(auth)/Login" />
+        </Stack>
 
-      {shouldShowBottomNav() && (
-        <BottomNavigation
-          items={navigationItems}
-          onScannerPress={navigateToScanner}
-        />
-      )}
-    </View>
+        {shouldShowBottomNav() && (
+          <BottomNavigation
+            items={navigationItems}
+            onScannerPress={navigateToScanner}
+          />
+        )}
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
 

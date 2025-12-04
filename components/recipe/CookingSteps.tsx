@@ -209,7 +209,7 @@ function formatTime(sec: number | null) {
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: '#FFF' },
   topBar: {
-    paddingTop: 40,
+    paddingTop: 20,
     paddingHorizontal: 24,
     paddingBottom: 25, 
     alignItems: 'center',
