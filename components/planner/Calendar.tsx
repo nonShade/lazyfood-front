@@ -1,4 +1,4 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { DayPlan } from '../../types/planner';
@@ -26,11 +26,55 @@ const Calendar: React.FC<CalendarProps> = ({
 
   const weekDays = ['D', 'L', 'M', 'M', 'J', 'V', 'S'];
 
-  const suggestedDays = useMemo(() => getNext7Days(), []);
-
-  const isSuggestedDay = (day: number): boolean => {
+  const isFutureDate = (day: number): boolean => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
-    return isDateInNext7Days(date, suggestedDays);
+    date.setHours(0, 0, 0, 0);
+    return date > today;
+  };
+
+  const isInNext7DaysRange = (day: number): boolean => {
+    const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    const next7Days = getNext7Days();
+    return isDateInNext7Days(date, next7Days);
+  };
+
+  const hasSuggestedRecipes = (day: number): boolean => {
+    const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    const dateString = date.toISOString().split('T')[0];
+
+    const dayPlan = weekPlan?.days.find((d: DayPlan) => d.date === dateString);
+    const dayPlanExists = Boolean(dayPlan);
+
+    if (dayPlanExists && !dayPlan?.breakfast && !dayPlan?.lunch && !dayPlan?.dinner) {
+      return isInNext7DaysRange(day) || !isFutureDate(day);
+    }
+
+    return false;
+  };
+
+  const isInValidRange = (day: number): boolean => {
+    if (!weekPlan) {
+      return false;
+    }
+
+    const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+    const startDate = new Date(weekPlan.startDate);
+    const endDate = new Date(weekPlan.endDate);
+
+    date.setHours(0, 0, 0, 0);
+    startDate.setHours(0, 0, 0, 0);
+    endDate.setHours(0, 0, 0, 0);
+
+    return date >= startDate && date <= endDate;
+  };
+
+  const shouldShowRecipeStyle = (day: number): boolean => {
+    const hasRecipes = hasRecipesForDate(day);
+    const inValidRange = isInValidRange(day);
+
+    return hasRecipes && inValidRange;
   };
 
   const getDaysInMonth = (date: Date) => {
@@ -42,13 +86,18 @@ const Calendar: React.FC<CalendarProps> = ({
   };
 
   const hasRecipesForDate = (day: number): boolean => {
-    if (!weekPlan?.days) return false;
+    if (!weekPlan?.days) {
+      return false;
+    }
 
     const date = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
     const dateString = date.toISOString().split('T')[0];
 
     const dayPlan = weekPlan.days.find((d: DayPlan) => d.date === dateString);
-    return Boolean(dayPlan?.breakfast || dayPlan?.lunch || dayPlan?.dinner);
+    const hasPlannedRecipes = Boolean(dayPlan?.breakfast || dayPlan?.lunch || dayPlan?.dinner);
+    const hasSuggestions = hasSuggestedRecipes(day);
+
+    return hasPlannedRecipes || hasSuggestions;
   };
 
   const getEmojisForDate = (day: number): string[] => {
@@ -64,7 +113,7 @@ const Calendar: React.FC<CalendarProps> = ({
     if (dayPlan?.lunch?.icon) emojis.push(dayPlan.lunch.icon);
     if (dayPlan?.dinner?.icon) emojis.push(dayPlan.dinner.icon);
 
-    return emojis.slice(0, 3); // Máximo 3 emojis
+    return emojis.slice(0, 3);
   };
 
   const isDateSelected = (day: number): boolean => {
@@ -83,9 +132,8 @@ const Calendar: React.FC<CalendarProps> = ({
     }
 
     for (let day = 1; day <= daysInMonth; day++) {
-      const hasRecipes = hasRecipesForDate(day);
+      const shouldShowRecipes = shouldShowRecipeStyle(day);
       const isSelected = isDateSelected(day);
-      const isSuggested = isSuggestedDay(day);
       const emojis = getEmojisForDate(day);
 
       days.push(
@@ -101,8 +149,7 @@ const Calendar: React.FC<CalendarProps> = ({
           <View
             style={[
               styles.dayContent,
-              hasRecipes && styles.dayWithRecipes,
-              isSuggested && !hasRecipes && styles.suggestedDay,
+              shouldShowRecipes && styles.dayWithRecipes,
               isSelected && styles.selectedDay,
             ]}
           >
@@ -163,7 +210,7 @@ const Calendar: React.FC<CalendarProps> = ({
         <View style={styles.legend}>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, styles.recipeDot]} />
-            <Text style={styles.legendText}>Días con recetas</Text>
+            <Text style={styles.legendText}>Días con recetas planificadas</Text>
           </View>
           <View style={styles.legendItem}>
             <View style={[styles.legendDot, styles.selectedDot]} />
@@ -230,12 +277,6 @@ const styles = StyleSheet.create({
     borderWidth: 2,
     borderColor: '#F59E0B',
   },
-  suggestedDay: {
-    backgroundColor: '#FEF3C7',
-    borderWidth: 1,
-    borderColor: '#D97706',
-    borderStyle: 'dashed',
-  },
   selectedDay: {
     backgroundColor: '#F59E0B',
   },
@@ -270,11 +311,6 @@ const styles = StyleSheet.create({
     backgroundColor: '#FDE68A',
     borderWidth: 2,
     borderColor: '#F59E0B',
-  },
-  suggestedDot: {
-    backgroundColor: '#FEF3C7',
-    borderWidth: 1,
-    borderColor: '#D97706',
   },
   selectedDot: {
     backgroundColor: '#F59E0B',

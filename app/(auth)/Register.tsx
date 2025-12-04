@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
@@ -12,8 +13,7 @@ import {
   View,
 } from 'react-native';
 import { Colors } from '../../constants/theme';
-import { Ionicons } from '@expo/vector-icons';
-import { registrarUsuario } from '../../services/api/authService';
+import { login, registrarUsuario } from '../../services/api/authService';
 
 interface FormErrors {
   fullName?: string;
@@ -93,6 +93,11 @@ export default function Register() {
       };
 
       await registrarUsuario(registrationData);
+      await login({
+        email,
+        password,
+      });
+
       router.push('/onboarding');
     } catch (error) {
       Alert.alert('Error', error instanceof Error ? error.message : 'Hubo un problema al crear tu cuenta. Intenta nuevamente.');
@@ -147,6 +152,7 @@ export default function Register() {
               placeholder="Nombre completo"
               style={styles.input}
               placeholderTextColor="#9CA3AF"
+              selectionColor={Colors.light.primary}
             />
           </View>
           {errors.fullName && <Text style={styles.errorText}>{errors.fullName}</Text>}
@@ -161,6 +167,7 @@ export default function Register() {
               autoCapitalize="none"
               style={styles.input}
               placeholderTextColor="#9CA3AF"
+              selectionColor={Colors.light.primary}
             />
           </View>
           {errors.email && <Text style={styles.errorText}>{errors.email}</Text>}
@@ -173,6 +180,7 @@ export default function Register() {
               placeholder="País"
               style={styles.input}
               placeholderTextColor="#9CA3AF"
+              selectionColor={Colors.light.primary}
             />
           </View>
           {errors.country && <Text style={styles.errorText}>{errors.country}</Text>}
@@ -186,6 +194,7 @@ export default function Register() {
               secureTextEntry={!showPassword}
               style={styles.input}
               placeholderTextColor="#9CA3AF"
+              selectionColor={Colors.light.primary}
             />
             <TouchableOpacity
               onPress={() => setShowPassword(!showPassword)}

@@ -44,21 +44,20 @@ type AddIngredientModalProps = {
     visible: boolean;
     onClose: () => void;
     onAdd: (ingredients: any[]) => void;
+    existingIngredients: Array<{
+        id: string;
+        name: string;
+        category: string;
+        icon: string;
+        unit: string;
+    }>;
 };
 
-const AddIngredientModal = ({ visible, onClose, onAdd }: AddIngredientModalProps) => {
+const AddIngredientModal = ({ visible, onClose, onAdd, existingIngredients }: AddIngredientModalProps) => {
     const [searchQuery, setSearchQuery] = useState('');
     const [quantities, setQuantities] = useState<Record<string, number>>({});
 
-    const availableIngredients = [
-        { id: '4', name: 'Manzanas', category: 'Frutas y Verduras', icon: '🍎' },
-        { id: '5', name: 'Plátanos', category: 'Frutas y Verduras', icon: '🍌' },
-        { id: '6', name: 'Papas', category: 'Frutas y Verduras', icon: '🥔' },
-        { id: '7', name: 'Zanahoria', category: 'Frutas y Verduras', icon: '🥕' },
-        { id: '8', name: 'Lechuga', category: 'Frutas y Verduras', icon: '🥬' },
-    ];
-
-    const filteredIngredients = availableIngredients.filter((ing) =>
+    const filteredIngredients = existingIngredients.filter((ing) =>
         ing.name.toLowerCase().includes(searchQuery.toLowerCase())
     );
 
@@ -74,7 +73,7 @@ const AddIngredientModal = ({ visible, onClose, onAdd }: AddIngredientModalProps
         const selectedIngredients = Object.entries(quantities)
             .filter(([_, qty]) => qty as any > 0)
             .map(([id, qty]) => {
-                const ing = availableIngredients.find((i) => i.id === id);
+                const ing = existingIngredients.find((i) => i.id === id);
                 return { ...ing, quantity: qty };
             });
 
@@ -107,17 +106,32 @@ const AddIngredientModal = ({ visible, onClose, onAdd }: AddIngredientModalProps
                     </View>
 
                     <ScrollView style={styles.ingredientList}>
-                        {filteredIngredients.map((ingredient: any) => (
-                            <AddIngredientItem
-                                key={ingredient.id}
-                                name={ingredient.name}
-                                category={ingredient.category}
-                                icon={ingredient.icon}
-                                quantity={quantities[ingredient.id] || 0}
-                                onIncrease={() => handleIncrease(ingredient.id)}
-                                onDecrease={() => handleDecrease(ingredient.id)}
-                            />
-                        ))}
+                        {filteredIngredients.length === 0 ? (
+                            <View style={styles.emptyState}>
+                                {existingIngredients.length === 0 ? (
+                                    <Text style={styles.emptyStateText}>
+                                        No tienes ingredientes en tu inventario.{'\n'}
+                                        Usa el scanner para agregar ingredientes automáticamente.
+                                    </Text>
+                                ) : (
+                                    <Text style={styles.emptyStateText}>
+                                        No se encontraron ingredientes con "{searchQuery}"
+                                    </Text>
+                                )}
+                            </View>
+                        ) : (
+                            filteredIngredients.map((ingredient: any) => (
+                                <AddIngredientItem
+                                    key={ingredient.id}
+                                    name={ingredient.name}
+                                    category={ingredient.category}
+                                    icon={ingredient.icon}
+                                    quantity={quantities[ingredient.id] || 0}
+                                    onIncrease={() => handleIncrease(ingredient.id)}
+                                    onDecrease={() => handleDecrease(ingredient.id)}
+                                />
+                            ))
+                        )}
                     </ScrollView>
 
                     <View style={styles.modalActions}>
@@ -258,6 +272,17 @@ const styles = StyleSheet.create({
         color: '#FFF',
         fontSize: 16,
         fontWeight: '600',
+    },
+    emptyState: {
+        paddingVertical: 40,
+        paddingHorizontal: 20,
+        alignItems: 'center',
+    },
+    emptyStateText: {
+        fontSize: 16,
+        color: '#666',
+        textAlign: 'center',
+        lineHeight: 22,
     },
 });
 

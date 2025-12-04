@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import {
-  obtenerInventario,
+  actualizarInventario,
   InventoryIngredient,
+  obtenerInventario,
 } from "../services/api/inventoryService";
 
 interface Ingredient {
@@ -10,6 +11,7 @@ interface Ingredient {
   quantity: number;
   category: string;
   icon: string;
+  unit: string;
 }
 
 export const useInventory = () => {
@@ -26,6 +28,7 @@ export const useInventory = () => {
     quantity: apiIngredient.cantidad,
     category: apiIngredient.ingrediente.categoria || "Sin categoría",
     icon: apiIngredient.ingrediente.emoji || "🥫",
+    unit: apiIngredient.ingrediente.unidad || "disponibles",
   });
 
   const loadInventory = async () => {
@@ -53,21 +56,31 @@ export const useInventory = () => {
     return loadInventory();
   }, []);
 
-  const addIngredients = (newIngredients: Ingredient[]) => {
-    setIngredients((prev) => {
-      const updated = [...prev];
+  const addIngredients = async (newIngredients: Ingredient[]) => {
+    try {
+      setIsLoading(true);
+      setError(null);
 
-      newIngredients.forEach((newIng) => {
-        const existingIndex = updated.findIndex((ing) => ing.id === newIng.id);
-        if (existingIndex >= 0) {
-          updated[existingIndex].quantity += newIng.quantity;
-        } else {
-          updated.push(newIng);
-        }
-      });
+      const apiIngredients = newIngredients.map((ingredient) => ({
+        id: ingredient.id,
+        name: ingredient.name,
+        emoji: ingredient.icon,
+        category: ingredient.category,
+        quantity: ingredient.quantity,
+        unit: ingredient.unit,
+        state: "fresh",
+        confidence: 1.0,
+      }));
 
-      return updated;
-    });
+      await actualizarInventario(apiIngredients);
+
+      await loadInventory();
+    } catch (err: any) {
+      console.error("Error adding ingredients:", err);
+      setError(err.message || "Error al agregar ingredientes");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const updateIngredient = (updatedIngredient: Ingredient) => {

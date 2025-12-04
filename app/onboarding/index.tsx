@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, StyleSheet } from 'react-native';
 import { router } from 'expo-router';
 import ProgressIndicator from '../../components/onboarding/ProgressIndicator';
@@ -6,6 +6,7 @@ import Step1 from './Step1';
 import Step2 from './Step2';
 import Step3 from './Step3';
 import { Colors } from '../../constants/theme';
+import { useAuth } from '../../hooks/useAuth';
 
 interface OnboardingData {
   name: string;
@@ -16,6 +17,7 @@ interface OnboardingData {
 }
 
 const OnboardingFlow: React.FC = () => {
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(1);
   const [data, setData] = useState<OnboardingData>({
     name: '',
@@ -24,6 +26,12 @@ const OnboardingFlow: React.FC = () => {
     allergies: [],
     goals: []
   });
+
+  useEffect(() => {
+    if (user?.nombre) {
+      setData(prev => ({ ...prev, name: user.nombre }));
+    }
+  }, [user]);
 
   const nextStep = () => {
     if (currentStep < 3) {
