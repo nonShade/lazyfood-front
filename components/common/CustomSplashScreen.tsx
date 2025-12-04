@@ -1,6 +1,5 @@
 import React, { useEffect, useRef } from 'react';
 import { View, Text, StyleSheet, Animated, TouchableOpacity } from 'react-native';
-import * as SplashScreen from 'expo-splash-screen';
 import { useRouter } from 'expo-router';
 import LazyFoodLogo from '../ui/LazyFoodLogo';
 import { Colors } from '../../constants/theme';
@@ -11,8 +10,6 @@ const CustomSplashScreen: React.FC = () => {
   const router = useRouter();
 
   useEffect(() => {
-    SplashScreen.preventAutoHideAsync();
-
     Animated.parallel([
       Animated.timing(fadeAnim, {
         toValue: 1,
@@ -29,7 +26,6 @@ const CustomSplashScreen: React.FC = () => {
   }, [fadeAnim, scaleAnim]);
 
   const handleStart = () => {
-    SplashScreen.hideAsync();
     router.push('/(auth)/Login');
   };
 
