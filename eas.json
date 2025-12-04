@@ -16,6 +16,10 @@
     "production": {
       "android": {
         "buildType": "apk"
+      },
+      "env": {
+        "EXPO_PUBLIC_API_URL": "http://200.13.5.10:5000",
+        "EXPO_PUBLIC_ML_API_URL": "http://200.13.5.10:8001"
       }
     }
   },

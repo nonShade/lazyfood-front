@@ -7,6 +7,8 @@ interface RegistroRequest {
   nombre: string;
   pais: string;
   password: string;
+  metas_nutricionales?: string; // Opcional - backend asigna "ninguna" por defecto
+  nivel_cocina?: number; // Opcional - backend asigna 1 por defecto
   preferencias?: {
     alergias?: string[];
     dieta?: string;

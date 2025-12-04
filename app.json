@@ -20,7 +20,8 @@
     },
     "plugins": [
       "expo-router",
-      "expo-web-browser"
+      "expo-web-browser",
+      "./plugins/android-network-config"
     ],
     "experiments": {
       "typedRoutes": true,
@@ -29,8 +30,9 @@
     "extra": {
       "router": {},
       "eas": {
-        "projectId": "4a5c4b6f-c298-4085-9d2f-8f2da2fa4c58"
+        "projectId": "3e3028bb-5f4d-48ef-ab1a-ab0980cf1165"
       }
-    }
+    },
+    "owner": "tito2"
   }
 }
