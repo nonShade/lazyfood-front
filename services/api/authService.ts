@@ -89,6 +89,29 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
   }
 };
 
+// Solicitar recuperación de contraseña (enviar email con instrucciones)
+export const requestPasswordReset = async (payload: { email: string }) => {
+  try {
+    const response = await fetch(`${API_BASE_URL}/v1/auth/forgot-password`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(payload),
+    });
+
+    const data = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+      throw new Error(data.message || 'Error al solicitar recuperación de contraseña');
+    }
+
+    return data;
+  } catch (error) {
+    throw error;
+  }
+};
+
 // Funciones para manejo de tokens
 export const saveTokens = async (
   accessToken: string,

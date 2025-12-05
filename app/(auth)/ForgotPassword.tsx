@@ -1,44 +1,39 @@
 import { useRouter } from 'expo-router';
 import { useState } from 'react';
 import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  ScrollView,
-  StyleSheet,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  View,
+    Alert,
+    KeyboardAvoidingView,
+    Platform,
+    ScrollView,
+    StyleSheet,
+    Text,
+    TextInput,
+    TouchableOpacity,
+    View,
 } from 'react-native';
 import { Colors } from '../../constants/theme';
-import { useAuth } from '../../hooks/useAuth';
+import { requestPasswordReset } from '../../services/api/authService';
 
-export default function Login() {
+export default function ForgotPassword() {
   const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [loading, setLoading] = useState(false);
   const router = useRouter();
-  const { login, loading } = useAuth();
 
-  const handleLogin = async () => {
-    if (!email.trim() || !password.trim()) {
-      Alert.alert('Error', 'Por favor completa todos los campos');
+  const handleSubmit = async () => {
+    if (!email.trim()) {
+      Alert.alert('Error', 'Por favor ingresa tu correo electrónico');
       return;
     }
 
+    setLoading(true);
     try {
-      const response = await login({
-        email: email.trim(),
-        password: password,
-      });
-
-      router.replace('/home');
-
+      const res = await requestPasswordReset({ email: email.trim() });
+      Alert.alert('Enviado', res?.message || 'Si el correo existe, recibirás instrucciones');
+      router.replace('Login' as any);
     } catch (error: any) {
-      Alert.alert(
-        'Error',
-        error.message || 'Error al iniciar sesión. Verifica tus credenciales.'
-      );
+      Alert.alert('Error', error.message || 'Error al solicitar recuperación de contraseña');
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -54,8 +49,8 @@ export default function Login() {
           </View>
         </View>
 
-        <Text style={styles.title}>Lazy Food</Text>
-        <Text style={styles.subtitle}>Tu cocina, más fácil que nunca</Text>
+        <Text style={styles.title}>Recuperar contraseña</Text>
+        <Text style={styles.subtitle}>Ingresa tu correo y te enviaremos instrucciones</Text>
 
         <View style={styles.form}>
           <TextInput
@@ -68,37 +63,20 @@ export default function Login() {
             placeholderTextColor="#9CA3AF"
           />
 
-          <TextInput
-            value={password}
-            onChangeText={setPassword}
-            placeholder="Contraseña"
-            secureTextEntry
-            style={styles.input}
-            placeholderTextColor="#9CA3AF"
-          />
-
           <TouchableOpacity
             style={[styles.primaryButton, loading && styles.primaryButtonDisabled]}
             activeOpacity={0.85}
-            onPress={handleLogin}
+            onPress={handleSubmit}
             disabled={loading}
           >
             <Text style={styles.primaryButtonText}>
-              {loading ? 'Iniciando sesión...' : 'Iniciar Sesión'}
+              {loading ? 'Enviando...' : 'Confirmar'}
             </Text>
           </TouchableOpacity>
 
-          <View style={styles.linksRow}>
-            <Text style={styles.smallText}>¿Olvidaste tu contraseña?</Text>
-            <TouchableOpacity onPress={() => router.push('ForgotPassword' as any)}>
-              <Text style={styles.linkText}>Recuperala aquí</Text>
-            </TouchableOpacity>
-          </View>
-
           <View style={styles.registerRow}>
-            <Text style={styles.smallText}>¿No tienes cuenta?</Text>
-            <TouchableOpacity onPress={() => router.push('Register' as any)}>
-              <Text style={styles.linkText}>Registrate aquí</Text>
+            <TouchableOpacity onPress={() => router.back()}>
+              <Text style={styles.linkText}>Volver</Text>
             </TouchableOpacity>
           </View>
         </View>
@@ -140,7 +118,7 @@ const styles = StyleSheet.create({
     fontWeight: '700',
   },
   title: {
-    fontSize: 28,
+    fontSize: 22,
     fontWeight: '700',
     color: Colors.light.text,
     marginTop: 12,
@@ -149,6 +127,7 @@ const styles = StyleSheet.create({
     color: '#6B7280',
     marginTop: 6,
     marginBottom: 18,
+    textAlign: 'center',
   },
   form: {
     width: '100%',
@@ -188,18 +167,9 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     fontSize: 16,
   },
-  linksRow: {
-    alignItems: 'center',
-    marginTop: 6,
-    marginBottom: 6,
-  },
   registerRow: {
     alignItems: 'center',
     marginTop: 10,
-  },
-  smallText: {
-    color: '#374151',
-    marginBottom: 6,
   },
   linkText: {
     color: Colors.light.primary,
