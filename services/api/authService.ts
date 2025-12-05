@@ -92,7 +92,7 @@ export const login = async (data: LoginRequest): Promise<LoginResponse> => {
 // Solicitar recuperación de contraseña (enviar email con instrucciones)
 export const requestPasswordReset = async (payload: { email: string }) => {
   try {
-    const response = await fetch(`${API_BASE_URL}/v1/auth/forgot-password`, {
+    const response = await fetch(`${API_BASE_URL}/v1/usuarios/recuperar-password`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
