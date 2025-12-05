@@ -1,24 +1,65 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-import 'react-native-reanimated';
-
-import { useColorScheme } from '@/hooks/use-color-scheme';
-
-export const unstable_settings = {
-  anchor: '(tabs)',
-};
+import { Stack, usePathname } from 'expo-router';
+import { View, StyleSheet, StatusBar } from 'react-native';
+import { SafeAreaProvider, SafeAreaView } from 'react-native-safe-area-context';
+import BottomNavigation from '../components/common/BottomNavigation';
+import { useNavigation } from '../hooks/useNavigation';
 
 export default function RootLayout() {
-  const colorScheme = useColorScheme();
+  const pathname = usePathname();
+  const { getNavigationItems, navigateToScanner } = useNavigation();
+
+  const getActiveRoute = (): 'home' | 'inventory' | 'planner' | 'profile' => {
+    if (pathname.includes('/home')) return 'home';
+    if (pathname.includes('/planner')) return 'planner';
+    if (pathname.includes('/inventory')) return 'inventory';
+    if (pathname.includes('/profile')) return 'profile';
+    return 'home';
+  };
+
+  const shouldShowBottomNav = () => {
+    const routesWithBottomNav = ['/home', '/planner', '/inventory', '/profile'];
+    const routesWithoutBottomNav = ['/', '/(auth)/Login'];
+
+    if (routesWithoutBottomNav.includes(pathname) || pathname.includes('(auth)') || pathname.includes('onboarding')) {
+      return false;
+    }
+
+    return routesWithBottomNav.some(route => pathname.includes(route));
+  };
+
+  const navigationItems = getNavigationItems(getActiveRoute());
 
   return (
-    <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-      <Stack>
-        <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-        <Stack.Screen name="modal" options={{ presentation: 'modal', title: 'Modal' }} />
-      </Stack>
-      <StatusBar style="auto" />
-    </ThemeProvider>
+    <SafeAreaProvider>
+      <SafeAreaView style={styles.container} edges={['top']}>
+        <StatusBar barStyle="dark-content" backgroundColor="#FFF" />
+        <Stack
+          screenOptions={{
+            headerShown: false,
+          }}
+        >
+          <Stack.Screen name="index" />
+          <Stack.Screen name="home/index" />
+          <Stack.Screen name="planner/index" />
+          <Stack.Screen name="inventory/index" />
+          <Stack.Screen name="scanner/index" />
+          <Stack.Screen name="recipe/recipe" />
+          <Stack.Screen name="(auth)/Login" />
+        </Stack>
+
+        {shouldShowBottomNav() && (
+          <BottomNavigation
+            items={navigationItems}
+            onScannerPress={navigateToScanner}
+          />
+        )}
+      </SafeAreaView>
+    </SafeAreaProvider>
   );
 }
+
+const styles = StyleSheet.create({
+  container: {
+    flex: 1,
+  },
+});

@@ -1,0 +1,178 @@
+name: Build and Deploy LazyFood
+
+on:
+  push:
+    branches: [ develop ]
+  pull_request:
+    branches: [ develop ]
+
+jobs:
+  build-apk:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+
+    - name: Setup Node.js
+      uses: actions/setup-node@v4
+      with:
+        node-version: '20.x'
+        cache: 'npm'
+
+    - name: Install dependencies
+      run: npm ci
+
+    - name: Setup Expo and EAS
+      uses: expo/expo-github-action@v8
+      with:
+        expo-version: latest
+        eas-version: latest
+        token: ${{ secrets.EXPO_TOKEN }}
+
+    - name: Create .env file
+      run: |
+        echo "EXPO_PUBLIC_ML_API_URL=${{ secrets.EXPO_PUBLIC_ML_API_URL }}" >> .env
+        echo "EXPO_PUBLIC_API_URL=${{ secrets.EXPO_PUBLIC_API_URL }}" >> .env
+
+    - name: Build APK and capture build ID
+      id: build
+      run: |
+        # Build y capturar output
+        BUILD_OUTPUT=$(eas build --platform android --profile preview --non-interactive --clear-cache)
+        echo "$BUILD_OUTPUT"
+        
+        # Extraer Build ID de la URL de logs
+        BUILD_ID=$(echo "$BUILD_OUTPUT" | grep -o "builds/[a-f0-9-]*" | head -1 | cut -d'/' -f2)
+        echo "Build ID: $BUILD_ID"
+        echo "build_id=$BUILD_ID" >> $GITHUB_OUTPUT
+        
+        # Esperar un momento para que el build esté disponible
+        sleep 30
+
+    - name: Download APK using Build ID
+      run: |
+        BUILD_ID="${{ steps.build.outputs.build_id }}"
+        echo "Downloading APK for build: $BUILD_ID"
+        
+        # Obtener la URL del artefacto usando el Build ID específico
+        APK_URL=$(eas build:view $BUILD_ID --json | jq -r '.artifacts.buildUrl // empty')
+        
+        if [ -z "$APK_URL" ] || [ "$APK_URL" = "null" ]; then
+          echo "Error: No se pudo obtener la URL del APK"
+          echo "Intentando método alternativo..."
+          
+          # Método alternativo: descargar desde el build más reciente
+          APK_URL=$(eas build:list --platform android --json --limit 1 --non-interactive | jq -r '.[0].artifacts.buildUrl // empty' 2>/dev/null || echo "")
+          
+          if [ -z "$APK_URL" ] || [ "$APK_URL" = "null" ]; then
+            echo "Error: No se pudo obtener la URL del APK con ningún método"
+            exit 1
+          fi
+        fi
+        
+        echo "APK URL: $APK_URL"
+        wget -O app-release.apk "$APK_URL"
+        
+        # Verificar que el archivo se descargó correctamente
+        if [ ! -f app-release.apk ]; then
+          echo "Error: El archivo APK no se descargó correctamente"
+          exit 1
+        fi
+        
+        # Mostrar información del archivo
+        ls -la app-release.apk
+
+    - name: Upload APK to GitHub
+      uses: actions/upload-artifact@v4
+      with:
+        name: lazyfood-app-${{ github.sha }}
+        path: app-release.apk
+        retention-days: 30
+
+  deploy-to-vps:
+    needs: build-apk
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/develop'
+
+    steps:
+    - name: Download APK
+      uses: actions/download-artifact@v4
+      with:
+        name: lazyfood-app-${{ github.sha }}
+
+    - name: Deploy APK to VPS
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        password: ${{ secrets.VPS_PASSWORD }}
+        script: |
+          mkdir -p /var/www/lazyfood-builds
+          rm -f /var/www/lazyfood-builds/lazyfood-latest.apk
+
+    - name: Upload APK to VPS
+      uses: appleboy/scp-action@v0.1.7
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        password: ${{ secrets.VPS_PASSWORD }}
+        source: "app-release.apk"
+        target: "/var/www/lazyfood-builds/"
+
+    - name: Setup APK download endpoint
+      uses: appleboy/ssh-action@v1.0.3
+      with:
+        host: ${{ secrets.VPS_HOST }}
+        username: ${{ secrets.VPS_USERNAME }}
+        password: ${{ secrets.VPS_PASSWORD }}
+        script: |
+          cd /var/www/lazyfood-builds
+          mv app-release.apk lazyfood-latest.apk
+
+          cat > serve-apk.js << 'EOF'
+          const http = require('http');
+          const fs = require('fs');
+          const path = require('path');
+
+          const server = http.createServer((req, res) => {
+            if (req.url === '/download' || req.url === '/lazyfood-latest.apk') {
+              const filePath = path.join(__dirname, 'lazyfood-latest.apk');
+
+              if (fs.existsSync(filePath)) {
+                res.writeHead(200, {
+                  'Content-Type': 'application/vnd.android.package-archive',
+                  'Content-Disposition': 'attachment; filename="lazyfood-latest.apk"'
+                });
+                fs.createReadStream(filePath).pipe(res);
+              } else {
+                res.writeHead(404, {'Content-Type': 'text/plain'});
+                res.end('APK not found');
+              }
+            } else if (req.url === '/') {
+              res.writeHead(200, {'Content-Type': 'text/html'});
+              res.end(`
+                <html>
+                  <head><title>LazyFood APK Download</title></head>
+                  <body>
+                    <h1>LazyFood App</h1>
+                    <p>Download the latest version:</p>
+                    <a href="/download" download>Download LazyFood APK</a>
+                    <p>Build: ${new Date().toISOString()}</p>
+                  </body>
+                </html>
+              `);
+            } else {
+              res.writeHead(404, {'Content-Type': 'text/plain'});
+              res.end('Not found');
+            }
+          });
+
+          server.listen(3000, '0.0.0.0', () => {
+            console.log('APK server running on port 3000');
+          });
+          EOF
+
+          npm install -g pm2
+          pm2 delete apk-server 2>/dev/null || true
+          pm2 start serve-apk.js --name apk-server
